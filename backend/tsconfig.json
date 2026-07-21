@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS", // Change from NodeNext to CommonJS
+    "moduleResolution": "node", // Change from NodeNext to node
+    "verbatimModuleSyntax": false, // Disable the strict import check
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  }
+}
