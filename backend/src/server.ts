@@ -2,8 +2,11 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
+
 import { auth } from "./auth";
 import { authMiddleware } from "./middleware";
+
+import attendanceRoute from "./routes/attendance.route";
 
 const app = express();
 const port = 3000;
@@ -16,9 +19,8 @@ app.use(
   }),
 );
 
-app.all("/api/auth/*splat", toNodeHandler(auth)); // Express v5
+app.all("/api/auth/*splat", toNodeHandler(auth));
 
-// Mount JSON body parser only for non-auth routes
 app.use(express.json());
 
 // Health check
@@ -38,6 +40,8 @@ app.get("/api/profile", authMiddleware, async (req, res) => {
   });
   return res.json(session);
 });
+
+app.use("/api/attendance", attendanceRoute);
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);

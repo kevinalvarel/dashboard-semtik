@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "./db/drizzle";
-import * as schema from "./db/schema";
+import * as schema from "./db/auth-schema";
 
 export const auth = betterAuth({
   trustedOrigins: [process.env.FRONTEND_URL!],
@@ -12,5 +12,13 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+  },
+  session: {
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
+  },
+  rateLimit: {
+    window: 10,
+    max: 20,
   },
 });

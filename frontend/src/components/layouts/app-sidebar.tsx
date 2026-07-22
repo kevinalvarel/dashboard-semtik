@@ -24,39 +24,18 @@ export const routeData = {
           title: "Overview",
           url: "/overview",
         },
-        {
-          title: "Analytics",
-          url: "/analytics",
-        },
-      ],
-    },
-    {
-      title: "Peserta",
-      items: [
-        {
-          title: "Daftar Peserta",
-          url: "/participants",
-        },
-        {
-          title: "Export Data",
-          url: "/export",
-        },
       ],
     },
     {
       title: "Absensi",
       items: [
         {
-          title: "Scan QR",
-          url: "/scan-qr",
-        },
-        {
-          title: "Riwayat Absensi",
-          url: "/history",
-        },
-        {
           title: "Semua Kehadiran",
           url: "/all-attendance",
+        },
+        {
+          title: "Scan QR",
+          url: "/scan-qr",
         },
       ],
     },

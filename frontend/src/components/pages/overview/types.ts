@@ -1,9 +1,8 @@
 export interface Participant {
-  id: string;
-  nim: string;
+  id: string | number;
+  nim: string | number;
   nama: string;
   email: string;
-  universitas: string;
   fakultas: string;
   prodi: string;
   attendance: {
@@ -19,7 +18,8 @@ export interface Stats {
   persentaseKehadiran: number;
 }
 
-export interface UniversityStat {
+export interface FacultyStat {
   name: string;
   count: number;
 }
+

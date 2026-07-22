@@ -1,4 +1,3 @@
-import { School } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -56,24 +55,15 @@ export function ParticipantDetailDialog({
               </div>
               <div>
                 <span className="text-muted-foreground block mb-0.5">
-                  Universitas
-                </span>
-                <span className="font-medium flex items-center gap-1">
-                  <School className="h-3 w-3 text-muted-foreground shrink-0" />
-                  {participant.universitas}
-                </span>
-              </div>
-              <div>
-                <span className="text-muted-foreground block mb-0.5">
                   Fakultas
                 </span>
-                <span className="font-medium">{participant.fakultas}</span>
+                <span className="font-medium">{participant.fakultas || "-"}</span>
               </div>
-              <div>
+              <div className="col-span-2">
                 <span className="text-muted-foreground block mb-0.5">
                   Program Studi
                 </span>
-                <span className="font-medium">{participant.prodi}</span>
+                <span className="font-medium">{participant.prodi || "-"}</span>
               </div>
             </div>
 

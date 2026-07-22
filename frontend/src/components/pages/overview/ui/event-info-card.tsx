@@ -19,9 +19,7 @@ export function EventInfoCard() {
         </div>
         <div className="flex justify-between py-1 border-b border-muted">
           <span>Tanggal Pelaksanaan:</span>
-          <span className="font-medium text-foreground">
-            15 September 2026
-          </span>
+          <span className="font-medium text-foreground">16 Desember 2026</span>
         </div>
         <div className="flex justify-between py-1">
           <span>Status Sinkronisasi:</span>

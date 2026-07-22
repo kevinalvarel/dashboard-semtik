@@ -1,4 +1,4 @@
-import { Search, Sparkles } from "lucide-react";
+import { Search } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -57,15 +57,6 @@ export function ParticipantTableSection({
                 Menampilkan status kehadiran real-time beberapa sampel peserta.
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge
-                variant="secondary"
-                className="px-2 py-1 flex gap-1 items-center bg-muted text-muted-foreground border-0 font-normal"
-              >
-                <Sparkles className="h-3 w-3 text-primary" />
-                Real-time Sync
-              </Badge>
-            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -74,7 +65,7 @@ export function ParticipantTableSection({
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Cari nama, NIM, universitas..."
+                placeholder="Cari nama, NIM, fakultas, prodi..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 bg-muted/30 border-muted-foreground/20 focus-visible:ring-ring"
@@ -128,7 +119,7 @@ export function ParticipantTableSection({
                   <TableHead className="w-[100px]">NIM</TableHead>
                   <TableHead>Nama</TableHead>
                   <TableHead className="hidden md:table-cell">
-                    Universitas
+                    Fakultas
                   </TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden sm:table-cell">
@@ -149,7 +140,7 @@ export function ParticipantTableSection({
                       </TableCell>
                       <TableCell className="font-medium">{p.nama}</TableCell>
                       <TableCell className="hidden md:table-cell text-muted-foreground max-w-[150px] truncate">
-                        {p.universitas}
+                        {p.fakultas || "-"}
                       </TableCell>
                       <TableCell>
                         <Badge
