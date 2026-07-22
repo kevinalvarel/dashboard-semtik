@@ -1,11 +1,11 @@
 # SEMTIK 2026 Admin Portal (Atmin Semtik)
 
-Welcome to the **SEMTIK 2026 Admin Portal** (Seminar Nasional Teknologi Informasi dan Komputer). This project is designed to manage event participants, monitor attendee check-ins in real-time, scan QR codes, export data, and track overall analytics.
+Welcome to the **SEMTIK 2026 Admin Portal** (Seminar Nasional Teknologi Informasi dan Komputer). This project is designed to manage event participants, monitor attendee check-ins in real-time, scan QR codes using camera and manual fallback, export data, and track overall analytics.
 
 The repository is structured as a monorepo consisting of:
 
-- [frontend/](/admin-semtik/frontend) — A modern React SPA.
-- [backend/](admin-semtik/backend) — A TypeScript Express server.
+- [frontend/](/frontend) — A modern React SPA with Vite, Shadcn UI, and React Query.
+- [backend/](/backend) — A TypeScript Express server powered by Drizzle ORM & Neon PostgreSQL.
 
 ---
 
@@ -14,13 +14,18 @@ The repository is structured as a monorepo consisting of:
 ### Frontend
 
 - **Core**: React 19, TypeScript, Vite 8, React Router v7
-- **Styling**: Tailwind CSS v4, `@base-ui/react` (unstyled components), `tw-animate-css`
-- **UI/UX**: Custom components built with `shadcn/ui` (under `@/components/ui`), Lucide React icons, and Sonner toast notifications
+- **State & Data Fetching**: `@tanstack/react-query` v5
+- **QR Code Scanning**: `react-qr-scanner` with custom Web Audio API feedback sounds
+- **Styling**: Tailwind CSS v4, `@base-ui/react`, `tw-animate-css`
+- **UI/UX**: Custom components built with `shadcn/ui` (under `@/components/ui`), Lucide React icons, and `sonner` toast notifications
+- **Authentication**: `better-auth` client integration
 - **Form Management**: React Hook Form with Zod schemas
 
 ### Backend
 
 - **Core**: Express v5, TypeScript
+- **Database & ORM**: Drizzle ORM (`drizzle-orm`) with Neon Serverless Postgres (`@neondatabase/serverless`)
+- **Authentication**: `better-auth` for node
 - **Execution**: `tsx` (TypeScript Execute) for fast live-reloads during development
 
 ---
@@ -33,22 +38,47 @@ Below are the main files and folders of interest:
 admin-semtik/
 ├── backend/                       # Express server codebase
 │   ├── src/
+│   │   ├── controller/            # Request handlers
+│   │   │   ├── attendance.controller.ts
+│   │   │   └── checkin.controller.ts  # QR Code scan controller
+│   │   ├── db/                    # Drizzle ORM database schemas & config
+│   │   │   ├── attendance-schema.ts   # Peserta & attendance table schema
+│   │   │   ├── auth-schema.ts         # User session & auth schema
+│   │   │   └── drizzle.ts             # Drizzle client instance
+│   │   ├── routes/                # Express API router definitions
+│   │   │   └── attendance.route.ts    # GET / and POST /scan routes
+│   │   ├── services/              # Business logic layer
+│   │   │   ├── attendance.service.ts
+│   │   │   └── checkin.service.ts     # QR validation & atomic check-in logic
+│   │   ├── auth.ts                # Better-auth backend setup
+│   │   ├── middleware.ts          # Auth authentication middleware
 │   │   └── server.ts              # Entry point of the Express server
 │   ├── package.json               # Backend dependencies and scripts
 │   └── tsconfig.json
 ├── frontend/                      # React application codebase
 │   ├── src/
-│   │   ├── App.tsx                # Main router configuration
-│   │   ├── main.tsx               # Client entry point
-│   │   ├── index.css              # Global styles (Tailwind CSS v4)
+│   │   ├── api/                   # API client integrations
+│   │   │   └── attendance.ts      # getAttendance() & scanAttendance()
 │   │   ├── components/            # Reusable UI component libraries
 │   │   │   ├── layouts/           # Common layout elements (sidebar, login form)
+│   │   │   ├── pages/             # Page-specific modular UI components
+│   │   │   │   └── scan-qr/       # Modular QR Scanner sub-components
+│   │   │   │       ├── types.ts   # Shared types & Web Audio sound helper
+│   │   │   │       └── ui/        # Header, Viewfinder, ManualInput, ResultCard, HistoryCard
 │   │   │   └── ui/                # Base design system primitives (shadcn UI)
-│   │   ├── data/
-│   │   │   └── attendance.json    # Local mockup database for event attendance
-│   │   └── pages/                 # Routing Pages divided by layout groups
-│   │       ├── (auth)/            # Auth routes (Login)
-│   │       └── (dashboard)/       # Dashboard features (Overview, Scan, Admin)
+│   │   ├── lib/
+│   │   │   └── api.ts             # Fetch client with base URL & error handler
+│   │   ├── pages/                 # Routing Pages divided by layout groups
+│   │   │   ├── (auth)/            # Auth routes (Login)
+│   │   │   └── (dashboard)/       # Dashboard features
+│   │   │       ├── overview/      # Main analytics dashboard
+│   │   │       ├── scan-qr/       # Live QR Scanner page
+│   │   │       ├── all-attendance/# All participants list table
+│   │   │       └── admin/         # Settings page
+│   │   ├── types/                 # Custom TypeScript declaration files
+│   │   ├── App.tsx                # Main router configuration
+│   │   ├── main.tsx               # Client entry point
+│   │   └── index.css              # Global styles (Tailwind CSS v4)
 │   ├── package.json               # Frontend dependencies and scripts
 │   └── vite.config.ts             # Vite build & plugin configurations
 ├── package.json                   # Root package manager orchestrator
@@ -63,7 +93,7 @@ To install dependencies and run the application locally, follow these steps:
 
 ### 1. Install Dependencies
 
-You can install dependencies at the root directory to bootstrap both directories:
+You can install dependencies at the root directory to bootstrap both frontend and backend workspace packages:
 
 ```bash
 npm install
@@ -71,7 +101,22 @@ npm --prefix frontend install
 npm --prefix backend install
 ```
 
-### 2. Run in Development Mode
+### 2. Configure Environment Variables
+
+Create `.env` files in both backend and frontend directories:
+
+**Backend (`backend/.env`)**:
+```env
+DATABASE_URL=postgresql://user:password@ep-sample.us-east-2.aws.neon.tech/neondb?sslmode=require
+FRONTEND_URL=http://localhost:5173
+```
+
+**Frontend (`frontend/.env`)**:
+```env
+VITE_API_URL=http://localhost:3000
+```
+
+### 3. Run in Development Mode
 
 Use the orchestrated script at the root [package.json](file:///c:/Users/Administrator/Desktop/Project/admin-semtik/package.json) to start both the frontend and backend servers concurrently:
 
@@ -80,41 +125,45 @@ npm run dev
 ```
 
 - **Frontend Dev Server**: Runs on `http://localhost:5173/` (Vite)
-- **Backend Server**: Runs on `http://localhost:3000` (Express)
+- **Backend API Server**: Runs on `http://localhost:3000` (Express API)
 
-### 3. Isolated Start Commands
+---
 
-If you wish to run only one of the services:
+## 🔌 API Endpoints Summary
 
-- **Backend only**: `npm run dev:backend`
-- **Frontend only**: `npm run dev:frontend`
+| Method | Endpoint | Description | Payload / Params |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/attendance` | Fetch all participants and attendance status | N/A |
+| `POST` | `/api/attendance/scan` | Scan QR code & process real-time check-in | `{ "qrCode": "..." }` |
+| `POST` | `/api/attendance/check-in` | Alias endpoint for QR code check-in | `{ "token": "..." }` |
+| `GET` | `/api/overview` | Fetch user session overview | Requires auth cookie |
 
 ---
 
 ## 🌟 Key Application Features
 
-### 1. Authentication
+### 1. Live QR Code Scanner & Check-in
 
-- **Location**: [login/index.tsx](<file:///c:/Users/Administrator/Desktop/Project/admin-semtik/frontend/src/pages/(auth)/login/index.tsx>) utilizing [login-form.tsx](file:///c:/Users/Administrator/Desktop/Project/admin-semtik/frontend/src/components/layouts/login-form.tsx)
-- **Role**: Simple administration login layout requesting credentials before accessing the dashboard environment.
+- **Location**: [scan-qr/index.tsx](<file:///c:/Users/Administrator/Desktop/Project/admin-semtik/frontend/src/pages/(dashboard)/scan-qr/index.tsx>) & `@/components/pages/scan-qr`
+- **Features**:
+  - **Live Camera Scanner**: Viewfinder with animated laser overlay line and corner markers using `react-qr-scanner`.
+  - **Camera Controls**: Instant camera toggle (On/Off) and camera switcher (Environment/User camera).
+  - **Web Audio Sound Effects**: Custom beep audio feedback (success, warning, and error tones).
+  - **2.5s Scan Cooldown**: Cooldown mechanism preventing duplicate scans for the same QR code.
+  - **Manual Code Input**: Fallback tab for typing or testing QR codes manually.
+  - **Instant Feedback Card**: Visual status card (`200 OK` Emerald, `409 Conflict` Amber, `404` Red) displaying attendee profile details (Nama, NIM, Fakultas, Prodi, Email, & Check-in timestamp).
+  - **Session History List**: Real-time log of scanned attendance records in the current browser session.
 
 ### 2. Dashboard Overview
 
 - **Location**: [overview/index.tsx](<file:///c:/Users/Administrator/Desktop/Project/admin-semtik/frontend/src/pages/(dashboard)/overview/index.tsx>)
 - **Widgets**:
-  - **Total Registration**: 250 registered attendees.
-  - **Attended**: 198 successful check-ins.
-  - **Pending (Belum Hadir)**: 52 waiting check-ins.
-  - **Attendance Rate**: Responsive visual progress indicator showing a `79.2%` attendance rate.
-  - **Interactive Participant Table**: Search filter matching Names, NIM, University, and Program of Study. Tabs to swap between _Semua_ (All), _Hadir_ (Attended), and _Belum Hadir_ (Pending) status.
-  - **Distribution Bar**: Displays top 5 universities distribution (e.g. _Universitas Al-Khairiyah_, _Universitas Sultan Ageng Tirtayasa_, etc.).
-  - **Participant Detail Modal**: Clicking a participant reveals detail cards with complete profile parameters (Email, NIM, Faculty, Major, and precise Check-in time).
+  - **Real-Time Attendance Stats**: Total registered attendees, checked-in count, pending attendees, and percentage progress indicator.
+  - **Interactive Participant Table**: Search filter by Name, NIM, Faculty, and Program of Study. Filter tabs for *Semua*, *Hadir*, and *Belum Hadir*.
+  - **Distribution Charts**: Top universities and faculties attendee breakdown.
+  - **Participant Profile Dialog**: Inspect individual participant records and exact check-in timestamps.
 
-### 3. Sidebar Navigation Layout
+### 3. Authentication & Protected Routes
 
-- **Location**: [app-sidebar.tsx](file:///c:/Users/Administrator/Desktop/Project/admin-semtik/frontend/src/components/layouts/app-sidebar.tsx) and [DashboardLayout.tsx](file:///c:/Users/Administrator/Desktop/Project/admin-semtik/frontend/src/layouts/DashboardLayout.tsx)
-- Provides structured routing categories:
-  - **Dashboard**: Overview, Analytics
-  - **Peserta (Participants)**: Daftar Peserta, Export Data
-  - **Absensi (Attendance)**: Scan QR, Riwayat Absensi, Semua Kehadiran
-  - **Pengaturan (Settings)**: Admin settings
+- **Location**: [login/index.tsx](<file:///c:/Users/Administrator/Desktop/Project/admin-semtik/frontend/src/pages/(auth)/login/index.tsx>)
+- Powered by `better-auth` session cookies protecting dashboard routes (`/overview`, `/scan-qr`, `/all-attendance`, `/admin`).
