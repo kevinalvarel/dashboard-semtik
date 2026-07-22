@@ -12,23 +12,30 @@ import HistoryPage from "./pages/(dashboard)/history";
 import AllAttendancePage from "./pages/(dashboard)/all-attendance";
 import AdminPage from "./pages/(dashboard)/admin";
 
+import { GuestRoute } from "./components/routes/guest-route";
+import { ProtectedRoute } from "./components/routes/protected-route";
+
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<LoginPage />} />
-      <Route element={<DashboardLayout />}>
-        {/* Main Dashboard */}
-        <Route path="/overview" element={<DashboardPage />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
-        {/* Peserta */}
-        <Route path="/participants" element={<ParticipantsPage />} />
-        <Route path="/export" element={<ExportPage />} />
-        {/* Absensi */}
-        <Route path="/scan-qr" element={<ScanQRPage />} />
-        <Route path="/history" element={<HistoryPage />} />
-        <Route path="/all-attendance" element={<AllAttendancePage />} />
-        {/* Pengaturan */}
-        <Route path="/admin" element={<AdminPage />} />
+      <Route element={<GuestRoute />}>
+        <Route path="/" element={<LoginPage />} />
+      </Route>
+      <Route element={<ProtectedRoute />}>
+        <Route element={<DashboardLayout />}>
+          {/* Main Dashboard */}
+          <Route path="/overview" element={<DashboardPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+          {/* Peserta */}
+          <Route path="/participants" element={<ParticipantsPage />} />
+          <Route path="/export" element={<ExportPage />} />
+          {/* Absensi */}
+          <Route path="/scan-qr" element={<ScanQRPage />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/all-attendance" element={<AllAttendancePage />} />
+          {/* Pengaturan */}
+          <Route path="/admin" element={<AdminPage />} />
+        </Route>
       </Route>
     </Routes>
   );

@@ -1,13 +1,15 @@
 {
   "compilerOptions": {
+    "types": ["node"],
     "target": "ES2022",
-    "module": "CommonJS", // Change from NodeNext to CommonJS
-    "moduleResolution": "node", // Change from NodeNext to node
-    "verbatimModuleSyntax": false, // Disable the strict import check
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "verbatimModuleSyntax": false,
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true
-  }
+  },
+  "include": ["src"]
 }
