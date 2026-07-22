@@ -26,9 +26,15 @@ export const attendanceApi = async (url: string, options?: RequestInit) => {
     ...options,
   });
 
+  const data = await res.json().catch(() => null);
+
   if (!res.ok) {
-    throw new Error("Request failed");
+    if (data && typeof data === "object") {
+      return data;
+    }
+    throw new Error(res.statusText || "Request failed");
   }
 
-  return res.json();
+  return data;
 };
+

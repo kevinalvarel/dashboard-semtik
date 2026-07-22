@@ -5,7 +5,6 @@ import {
   serial,
   text,
   timestamp,
-  varchar,
 } from "drizzle-orm/pg-core";
 
 export const peserta = pgTable("peserta_semtik", {
@@ -27,3 +26,7 @@ export const peserta = pgTable("peserta_semtik", {
     withTimezone: true,
   }).defaultNow(),
 });
+
+export type Peserta = typeof peserta.$inferSelect;
+export type NewPeserta = typeof peserta.$inferInsert;
+

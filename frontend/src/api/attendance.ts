@@ -28,8 +28,20 @@ export interface AttendanceApiResponse {
   participants?: AttendanceParticipant[];
   stats?: AttendanceStats;
 }
+export interface ScanResponse {
+  success: boolean;
+  message: string;
+  data?: AttendanceParticipant;
+  error?: string;
+}
 
 export function getAttendance(): Promise<AttendanceApiResponse> {
   return attendanceApi("/attendance");
 }
 
+export function scanAttendance(qrCode: string): Promise<ScanResponse> {
+  return attendanceApi("/attendance/scan", {
+    method: "POST",
+    body: JSON.stringify({ qrCode }),
+  });
+}
