@@ -1,7 +1,9 @@
-const BASE_URL = import.meta.env.VITE_API_URL;
+const RAW_BASE_URL = import.meta.env.VITE_API_URL || "https://dashboard-semtik-production.up.railway.app";
+const BASE_URL = RAW_BASE_URL.replace(/\/$/, "");
 
 export const authApi = async (url: string, options?: RequestInit) => {
-  const res = await fetch(`${BASE_URL}${url}`, {
+  const path = url.startsWith("/") ? url : `/${url}`;
+  const res = await fetch(`${BASE_URL}${path}`, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
@@ -37,4 +39,5 @@ export const attendanceApi = async (url: string, options?: RequestInit) => {
 
   return data;
 };
+
 

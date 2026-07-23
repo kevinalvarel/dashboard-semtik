@@ -3,18 +3,28 @@ import express from "express";
 import cors from "cors";
 import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
 
-import { auth } from "./auth";
+import { auth, allowedOrigins } from "./auth";
 import { authMiddleware } from "./middleware";
 
 import attendanceRoute from "./routes/attendance.route";
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+
+      const cleanOrigin = origin.replace(/\/$/, "");
+      if (allowedOrigins.some((allowed) => allowed.replace(/\/$/, "") === cleanOrigin)) {
+        return callback(null, true);
+      }
+
+      console.warn(`[CORS] Blocked request from origin: ${origin}`);
+      return callback(null, false);
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     credentials: true,
   }),
 );
@@ -44,6 +54,7 @@ app.get("/api/profile", authMiddleware, async (req, res) => {
 app.use("/api/attendance", attendanceRoute);
 
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-  console.log(`Auth endpoints: http://localhost:${port}/api/auth`);
+  console.log(`Server running on port ${port}`);
+  console.log(`Allowed CORS origins:`, allowedOrigins);
 });
+

@@ -3,8 +3,22 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "./db/drizzle";
 import * as schema from "./db/auth-schema";
 
+const defaultOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://admin-semtik26.netlify.app",
+];
+
+const envOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map((url) => url.trim().replace(/\/$/, ""))
+  : [];
+
+export const allowedOrigins = Array.from(
+  new Set([...defaultOrigins, ...envOrigins])
+);
+
 export const auth = betterAuth({
-  trustedOrigins: [process.env.FRONTEND_URL!],
+  trustedOrigins: allowedOrigins,
 
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -22,3 +36,4 @@ export const auth = betterAuth({
     max: 20,
   },
 });
+
