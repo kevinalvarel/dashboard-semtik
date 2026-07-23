@@ -11,6 +11,7 @@ import { ManualInputCard } from "@/components/pages/scan-qr/ui/manual-input-card
 import { ScanResultCard } from "@/components/pages/scan-qr/ui/scan-result-card";
 import { ScanHistoryCard } from "@/components/pages/scan-qr/ui/scan-history-card";
 import { playBeep } from "@/components/pages/scan-qr/types";
+import type { IDetectedBarcode } from "@yudiel/react-qr-scanner";
 import type {
   RecentScan,
   ScanResultState,
@@ -123,10 +124,18 @@ export default function ScanQRPage() {
   });
 
   const handleScan = useCallback(
-    (data: { text: string } | string | null) => {
+    (data: IDetectedBarcode[] | { text: string } | string | null) => {
       if (!data || scanMutation.isPending) return;
 
-      const scannedText = typeof data === "string" ? data : data?.text;
+      let scannedText: string | undefined;
+      if (Array.isArray(data)) {
+        scannedText = data[0]?.rawValue;
+      } else if (typeof data === "string") {
+        scannedText = data;
+      } else if (data && "text" in data) {
+        scannedText = data.text;
+      }
+
       if (!scannedText || typeof scannedText !== "string") return;
 
       const cleanCode = scannedText.trim();

@@ -1,4 +1,4 @@
-import QrScanner from "react-qr-scanner";
+import { Scanner, type IDetectedBarcode } from "@yudiel/react-qr-scanner";
 import {
   Card,
   CardContent,
@@ -14,7 +14,7 @@ interface QRViewfinderProps {
   isCameraActive: boolean;
   facingMode: "environment" | "user";
   isPending: boolean;
-  onScan: (data: { text: string } | string | null) => void;
+  onScan: (data: IDetectedBarcode[] | { text: string } | string | null) => void;
   onError: (err: any) => void;
   onToggleCamera: () => void;
 }
@@ -52,22 +52,31 @@ export function QRViewfinder({
       <CardContent className="p-0 relative">
         {isCameraActive ? (
           <div className="relative aspect-square sm:aspect-[4/3] bg-black/95 flex items-center justify-center overflow-hidden">
-            <QrScanner
-              delay={300}
+            <Scanner
+              scanDelay={300}
               onError={onError}
               onScan={onScan}
               constraints={{
-                video: { facingMode },
+                facingMode,
               }}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
+              components={{
+                finder: false,
+              }}
+              styles={{
+                container: {
+                  width: "100%",
+                  height: "100%",
+                },
+                video: {
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                },
               }}
             />
 
             {/* Viewfinder Overlay Frame */}
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
               <div className="w-64 h-64 border-2 border-primary/80 rounded-2xl relative shadow-[0_0_0_9999px_rgba(0,0,0,0.4)]">
                 {/* Corner Markers */}
                 <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-primary rounded-tl-lg" />
@@ -81,7 +90,7 @@ export function QRViewfinder({
             </div>
 
             {isPending && (
-              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-10">
+              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-20">
                 <RefreshCw className="h-8 w-8 animate-spin text-primary" />
                 <p className="text-sm font-medium">Memproses Check-in...</p>
               </div>
