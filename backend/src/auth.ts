@@ -19,6 +19,12 @@ export const allowedOrigins = Array.from(
 
 export const auth = betterAuth({
   trustedOrigins: allowedOrigins,
+  advanced: {
+    defaultCookieAttributes: {
+      sameSite: "none",
+      secure: true,
+    },
+  },
 
   database: drizzleAdapter(db, {
     provider: "pg",

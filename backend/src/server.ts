@@ -9,6 +9,7 @@ import { authMiddleware } from "./middleware";
 import attendanceRoute from "./routes/attendance.route";
 
 const app = express();
+app.set("trust proxy", 1);
 const port = process.env.PORT || 3000;
 
 app.use(
