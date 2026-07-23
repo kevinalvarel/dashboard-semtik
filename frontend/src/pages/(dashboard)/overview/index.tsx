@@ -134,7 +134,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
+    <div className="flex flex-1 flex-col gap-4 p-3.5 sm:gap-6 sm:p-6 w-full max-w-7xl mx-auto min-w-0 overflow-x-hidden">
       {/* Welcome Banner */}
       <WelcomeBanner />
 
@@ -164,7 +164,7 @@ export default function DashboardPage() {
       <StatCards stats={stats} />
 
       {/* Main Content Sections */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3 w-full min-w-0">
         {/* Left Side: Interactive Table of Participants */}
         <ParticipantTableSection
           searchQuery={searchQuery}
@@ -178,7 +178,7 @@ export default function DashboardPage() {
         />
 
         {/* Right Side: Faculty breakdown and Quick links */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 min-w-0">
           <QuickLinksCard />
           <FacultyDistributionCard
             facultyStats={facultyStats}

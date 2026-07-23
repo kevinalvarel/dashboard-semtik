@@ -45,21 +45,21 @@ export function ParticipantTableSection({
   formatDate,
 }: ParticipantTableSectionProps) {
   return (
-    <div className="lg:col-span-2 flex flex-col gap-4">
-      <Card className="border-border bg-card flex-1">
-        <CardHeader className="pb-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="lg:col-span-2 flex flex-col gap-4 min-w-0 overflow-x-hidden">
+      <Card className="border-border bg-card flex-1 min-w-0 overflow-x-hidden">
+        <CardHeader className="p-4 sm:p-6 pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
             <div>
-              <CardTitle className="text-lg font-semibold">
+              <CardTitle className="text-base sm:text-lg font-semibold">
                 Kehadiran Peserta Terkini
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 Menampilkan status kehadiran real-time beberapa sampel peserta.
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0 space-y-4">
           {/* Search and Filters */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
@@ -68,14 +68,14 @@ export function ParticipantTableSection({
                 placeholder="Cari nama, NIM, fakultas, prodi..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-muted/30 border-muted-foreground/20 focus-visible:ring-ring"
+                className="pl-9 bg-muted/30 border-muted-foreground/20 focus-visible:ring-ring text-xs sm:text-sm h-9"
               />
             </div>
-            <div className="flex gap-1 bg-muted p-1 rounded-lg self-start">
+            <div className="grid grid-cols-3 sm:flex gap-1 bg-muted p-1 rounded-lg w-full sm:w-auto">
               <Button
                 variant={statusFilter === "semua" ? "default" : "ghost"}
                 size="sm"
-                className={`h-7 px-2.5 text-xs font-medium rounded-md ${
+                className={`h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-medium rounded-md truncate ${
                   statusFilter === "semua"
                     ? "bg-background text-foreground shadow-xs"
                     : ""
@@ -87,7 +87,7 @@ export function ParticipantTableSection({
               <Button
                 variant={statusFilter === "hadir" ? "default" : "ghost"}
                 size="sm"
-                className={`h-7 px-2.5 text-xs font-medium rounded-md ${
+                className={`h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-medium rounded-md truncate ${
                   statusFilter === "hadir"
                     ? "bg-background text-foreground shadow-xs"
                     : ""
@@ -99,33 +99,33 @@ export function ParticipantTableSection({
               <Button
                 variant={statusFilter === "belum hadir" ? "default" : "ghost"}
                 size="sm"
-                className={`h-7 px-2.5 text-xs font-medium rounded-md ${
+                className={`h-7 px-2 sm:px-2.5 text-[11px] sm:text-xs font-medium rounded-md truncate ${
                   statusFilter === "belum hadir"
                     ? "bg-background text-foreground shadow-xs"
                     : ""
                 }`}
                 onClick={() => setStatusFilter("belum hadir")}
               >
-                Belum Hadir ({tabCounts.belumHadir})
+                Belum ({tabCounts.belumHadir})
               </Button>
             </div>
           </div>
 
           {/* Table */}
-          <div className="rounded-lg border border-border overflow-hidden">
+          <div className="rounded-lg border border-border overflow-x-auto bg-card">
             <Table>
               <TableHeader className="bg-muted/50">
                 <TableRow>
-                  <TableHead className="w-[100px]">NIM</TableHead>
-                  <TableHead>Nama</TableHead>
-                  <TableHead className="hidden md:table-cell">
+                  <TableHead className="w-[90px] sm:w-[100px] text-xs">NIM</TableHead>
+                  <TableHead className="text-xs">Nama</TableHead>
+                  <TableHead className="hidden md:table-cell text-xs">
                     Fakultas
                   </TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden sm:table-cell">
+                  <TableHead className="text-xs w-[100px]">Status</TableHead>
+                  <TableHead className="hidden sm:table-cell text-xs">
                     Waktu Presensi
                   </TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
+                  <TableHead className="text-right text-xs w-[70px]">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -135,11 +135,13 @@ export function ParticipantTableSection({
                       key={p.id}
                       className="hover:bg-muted/30 transition-colors"
                     >
-                      <TableCell className="font-mono text-xs text-muted-foreground">
+                      <TableCell className="font-mono text-[11px] sm:text-xs text-muted-foreground whitespace-nowrap">
                         {p.nim}
                       </TableCell>
-                      <TableCell className="font-medium">{p.nama}</TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground max-w-[150px] truncate">
+                      <TableCell className="font-medium text-xs sm:text-sm max-w-[130px] sm:max-w-none truncate">
+                        {p.nama}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-xs text-muted-foreground max-w-[150px] truncate">
                         {p.fakultas || "-"}
                       </TableCell>
                       <TableCell>
@@ -151,21 +153,21 @@ export function ParticipantTableSection({
                           }
                           className={
                             p.attendance.status === "hadir"
-                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-0 hover:bg-emerald-500/20"
-                              : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-0 hover:bg-amber-500/20"
+                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-0 hover:bg-emerald-500/20 text-[10px] sm:text-xs"
+                              : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-0 hover:bg-amber-500/20 text-[10px] sm:text-xs"
                           }
                         >
                           {p.attendance.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell font-mono text-xs text-muted-foreground">
+                      <TableCell className="hidden sm:table-cell font-mono text-xs text-muted-foreground whitespace-nowrap">
                         {formatDate(p.attendance.checkedInAt)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 text-xs text-primary hover:text-primary/90 hover:bg-accent"
+                          className="h-7 sm:h-8 px-2 text-xs text-primary hover:text-primary/90 hover:bg-accent cursor-pointer"
                           onClick={() => onOpenDetail(p)}
                         >
                           Detail
@@ -177,7 +179,7 @@ export function ParticipantTableSection({
                   <TableRow>
                     <TableCell
                       colSpan={6}
-                      className="h-24 text-center text-muted-foreground"
+                      className="h-24 text-center text-xs sm:text-sm text-muted-foreground"
                     >
                       Tidak ada peserta ditemukan.
                     </TableCell>

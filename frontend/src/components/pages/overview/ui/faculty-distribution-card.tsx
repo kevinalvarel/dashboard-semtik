@@ -27,15 +27,15 @@ export function FacultyDistributionCard({
 
   return (
     <Card className="border-border bg-card">
-      <CardHeader>
-        <CardTitle className="text-base font-semibold">
+      <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-3">
+        <CardTitle className="text-sm sm:text-base font-semibold">
           Distribusi Fakultas
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs">
           Top asal fakultas peserta yang terdaftar.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0 space-y-4">
         <div className="space-y-3">
           {facultyStats.length > 0 ? (
             facultyStats.map((item, idx) => {
@@ -46,12 +46,12 @@ export function FacultyDistributionCard({
 
               return (
                 <div key={item.name} className="space-y-1">
-                  <div className="flex justify-between text-xs font-medium">
-                    <span className="truncate max-w-[190px] text-muted-foreground flex gap-1.5 items-center">
+                  <div className="flex justify-between text-xs font-medium gap-2">
+                    <span className="truncate min-w-0 flex-1 text-muted-foreground flex gap-1.5 items-center">
                       <Building2 className="h-3 w-3 shrink-0 text-muted-foreground" />
-                      {item.name || "Fakultas Tidak Diketahui"}
+                      <span className="truncate">{item.name || "Fakultas Tidak Diketahui"}</span>
                     </span>
-                    <span className="font-mono text-foreground">
+                    <span className="font-mono text-foreground shrink-0 text-[11px] sm:text-xs">
                       {item.count} Peserta
                     </span>
                   </div>

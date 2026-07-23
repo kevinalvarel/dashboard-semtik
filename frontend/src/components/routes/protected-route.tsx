@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from "react-router";
 import { authClient } from "@/lib/auth-client";
+import { Spinner } from "@/components/ui/spinner";
 
 export function ProtectedRoute() {
   const { data: session, isPending } = authClient.useSession();
@@ -7,7 +8,7 @@ export function ProtectedRoute() {
   if (isPending) {
     return (
       <div className="flex h-screen items-center justify-center">
-        Loading...
+        <Spinner className="size-6" />
       </div>
     );
   }

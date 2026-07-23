@@ -26,6 +26,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -332,31 +333,33 @@ export function AttendanceTableSection({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44">
-                            <DropdownMenuLabel className="text-xs">
-                              Opsi Peserta
-                            </DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => onOpenDetail(p)}
-                              className="text-xs gap-2 cursor-pointer"
-                            >
-                              <Eye className="h-3.5 w-3.5 text-primary" />
-                              Lihat Detail
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => onCopyText(String(p.nim), "NIM")}
-                              className="text-xs gap-2 cursor-pointer"
-                            >
-                              <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                              Salin NIM
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => onCopyText(p.email, "Email")}
-                              className="text-xs gap-2 cursor-pointer"
-                            >
-                              <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                              Salin Email
-                            </DropdownMenuItem>
+                            <DropdownMenuGroup>
+                              <DropdownMenuLabel className="text-xs">
+                                Opsi Peserta
+                              </DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => onOpenDetail(p)}
+                                className="text-xs gap-2 cursor-pointer"
+                              >
+                                <Eye className="h-3.5 w-3.5 text-primary" />
+                                Lihat Detail
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => onCopyText(String(p.nim), "NIM")}
+                                className="text-xs gap-2 cursor-pointer"
+                              >
+                                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                                Salin NIM
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => onCopyText(p.email, "Email")}
+                                className="text-xs gap-2 cursor-pointer"
+                              >
+                                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                                Salin Email
+                              </DropdownMenuItem>
+                            </DropdownMenuGroup>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

@@ -23,7 +23,7 @@ export function ParticipantDetailDialog({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       {participant && (
-        <DialogContent className="sm:max-w-md border-border bg-popover text-foreground">
+        <DialogContent className="max-w-[92vw] sm:max-w-md border-border bg-popover text-foreground rounded-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold flex items-center gap-2">
               Detail Profil Peserta

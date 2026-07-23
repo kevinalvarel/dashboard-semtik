@@ -31,8 +31,8 @@ export default function DashboardLayout() {
     <>
       <SidebarProvider>
         <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+        <SidebarInset className="min-w-0 overflow-x-hidden">
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 overflow-x-hidden">
             <SidebarTrigger className="-ml-1" />
             <Separator
               orientation="vertical"
@@ -60,7 +60,7 @@ export default function DashboardLayout() {
             </Breadcrumb>
           </header>
 
-          <main className="flex-1">
+          <main className="flex-1 min-w-0 overflow-x-hidden w-full">
             <Outlet />
           </main>
         </SidebarInset>
