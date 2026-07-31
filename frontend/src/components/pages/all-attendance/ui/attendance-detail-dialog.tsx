@@ -8,7 +8,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { AttendanceParticipant } from "@/api/attendance";
-import { Users, Building2, GraduationCap, Calendar } from "lucide-react";
+import { Users, Building2, GraduationCap, Calendar, Mail } from "lucide-react";
+import QRCode from "react-qr-code";
 
 interface AttendanceDetailDialogProps {
   isOpen: boolean;
@@ -101,6 +102,36 @@ export function AttendanceDetailDialog({
               <span className="font-medium text-foreground">
                 {participant.prodi}
               </span>
+            </div>
+            {participant.isEmailSent && (
+              <div className="bg-muted/30 p-2.5 rounded-lg border border-border/50">
+                <span className="text-muted-foreground block text-[11px] mb-0.5 flex items-center gap-1">
+                  <Mail className="h-3 w-3 text-muted-foreground" />
+                  Status Email
+                </span>
+                <span className="font-medium text-foreground flex items-center gap-1.5">
+                  <Badge variant="outline" className="text-[10px] bg-indigo-50/50 text-indigo-600 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800">
+                    Terkirim
+                  </Badge>
+                  {participant.emailSentAt && <span className="text-muted-foreground text-[10px]">{new Date(participant.emailSentAt).toLocaleDateString('id-ID')}</span>}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* QR Code Section */}
+          <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-50 rounded-xl border border-border/50 shadow-sm my-1">
+            <QRCode
+              value={participant.qrCode}
+              size={140}
+              level="M"
+              className="mb-3 rounded-md"
+            />
+            <div className="text-center">
+              <span className="text-[11px] text-slate-500 font-medium uppercase tracking-wider block mb-1">QR Code Identitas</span>
+              <Badge variant="secondary" className="font-mono text-xs px-2 py-0.5 bg-slate-100 text-slate-700 border-slate-200">
+                {participant.qrCode}
+              </Badge>
             </div>
           </div>
 

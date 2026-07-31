@@ -19,6 +19,10 @@ export const peserta = pgTable("peserta_semtik", {
   checkedInAt: timestamp("checked_in_at", {
     withTimezone: true,
   }),
+  isEmailSent: boolean("is_email_sent").default(false).notNull(),
+  emailSentAt: timestamp("email_sent_at", {
+    withTimezone: true,
+  }),
   createdAt: timestamp("created_at", {
     withTimezone: true,
   }).defaultNow(),

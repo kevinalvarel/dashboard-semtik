@@ -52,7 +52,10 @@ app.get("/api/profile", authMiddleware, async (req, res) => {
   return res.json(session);
 });
 
+import emailRoute from "./routes/email.route";
+
 app.use("/api/attendance", attendanceRoute);
+app.use("/api/emails", emailRoute);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

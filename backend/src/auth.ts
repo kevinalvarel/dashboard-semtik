@@ -10,11 +10,13 @@ const defaultOrigins = [
 ];
 
 const envOrigins = process.env.FRONTEND_URL
-  ? process.env.FRONTEND_URL.split(",").map((url) => url.trim().replace(/\/$/, ""))
+  ? process.env.FRONTEND_URL.split(",").map((url) =>
+      url.trim().replace(/\/$/, ""),
+    )
   : [];
 
 export const allowedOrigins = Array.from(
-  new Set([...defaultOrigins, ...envOrigins])
+  new Set([...defaultOrigins, ...envOrigins]),
 );
 
 export const auth = betterAuth({
@@ -42,4 +44,3 @@ export const auth = betterAuth({
     max: 20,
   },
 });
-

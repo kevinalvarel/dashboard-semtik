@@ -25,10 +25,7 @@ export default function DashboardPage() {
 
   // Normalize participants list from API response or fallback local data
   const participants: Participant[] = useMemo(() => {
-    const rawList =
-      apiResponse?.data ||
-      apiResponse?.participants ||
-      [];
+    const rawList = apiResponse?.data || apiResponse?.participants || [];
 
     if (!Array.isArray(rawList)) return [];
 

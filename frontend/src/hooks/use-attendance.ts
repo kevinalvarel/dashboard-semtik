@@ -7,4 +7,3 @@ export function useAttendance() {
     queryFn: getAttendance,
   });
 }
-

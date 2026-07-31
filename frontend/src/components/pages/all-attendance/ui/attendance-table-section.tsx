@@ -45,6 +45,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  Mail,
 } from "lucide-react";
 
 interface AttendanceTableSectionProps {
@@ -71,6 +72,7 @@ interface AttendanceTableSectionProps {
   onOpenDetail: (participant: AttendanceParticipant) => void;
   onCopyText: (text: string, label: string) => void;
   formatDate: (dateStr: string | null | undefined) => string;
+  onSendEmail?: (participant: AttendanceParticipant) => void;
 }
 
 export function AttendanceTableSection({
@@ -97,6 +99,7 @@ export function AttendanceTableSection({
   onOpenDetail,
   onCopyText,
   formatDate,
+  onSendEmail,
 }: AttendanceTableSectionProps) {
   return (
     <Card className="border-border bg-card flex-1 shadow-xs">
@@ -305,16 +308,23 @@ export function AttendanceTableSection({
                       </TableCell>
 
                       <TableCell>
-                        <Badge
-                          variant={isHadir ? "default" : "outline"}
-                          className={
-                            isHadir
-                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-0 hover:bg-emerald-500/20 text-[11px] font-medium"
-                              : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-0 hover:bg-amber-500/20 text-[11px] font-medium"
-                          }
-                        >
-                          {p.attendance?.status || "belum hadir"}
-                        </Badge>
+                        <div className="flex flex-col gap-1.5 items-start">
+                          <Badge
+                            variant={isHadir ? "default" : "outline"}
+                            className={
+                              isHadir
+                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-0 hover:bg-emerald-500/20 text-[11px] font-medium"
+                                : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-0 hover:bg-amber-500/20 text-[11px] font-medium"
+                            }
+                          >
+                            {p.attendance?.status || "belum hadir"}
+                          </Badge>
+                          {p.isEmailSent && (
+                            <Badge variant="outline" className="text-[10px] bg-indigo-50/50 text-indigo-600 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800">
+                              Email Terkirim
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
 
                       <TableCell className="hidden sm:table-cell font-mono text-xs text-muted-foreground">
@@ -359,6 +369,18 @@ export function AttendanceTableSection({
                                 <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                                 Salin Email
                               </DropdownMenuItem>
+                              {onSendEmail && !p.isEmailSent && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => onSendEmail(p)}
+                                    className="text-xs gap-2 cursor-pointer text-indigo-600 dark:text-indigo-400"
+                                  >
+                                    <Mail className="h-3.5 w-3.5" />
+                                    Kirim Email QR
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuGroup>
                           </DropdownMenuContent>
                         </DropdownMenu>

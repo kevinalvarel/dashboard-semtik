@@ -1,18 +1,22 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Download, QrCode } from "lucide-react";
+import { RefreshCw, Download, QrCode, Mail } from "lucide-react";
 
 interface HeaderBannerProps {
   isFetching: boolean;
   onRefetch: () => void;
   onExportCSV: () => void;
+  onSendEmailAll?: () => void;
+  isSendingEmail?: boolean;
 }
 
 export function HeaderBanner({
   isFetching,
   onRefetch,
   onExportCSV,
+  onSendEmailAll,
+  isSendingEmail,
 }: HeaderBannerProps) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-5">
@@ -52,11 +56,24 @@ export function HeaderBanner({
           variant="outline"
           size="sm"
           onClick={onExportCSV}
-          className="h-9 gap-1.5 text-xs font-medium border-border hover:bg-accent cursor-pointer"
+          className="h-9 gap-1.5 text-xs font-medium border-border hover:bg-accent cursor-pointer hidden sm:flex"
         >
           <Download className="h-3.5 w-3.5 text-primary" />
           Export CSV
         </Button>
+
+        {onSendEmailAll && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onSendEmailAll}
+            disabled={isSendingEmail}
+            className="h-9 gap-1.5 text-xs font-medium border-border hover:bg-accent cursor-pointer text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800"
+          >
+            <Mail className={`h-3.5 w-3.5 ${isSendingEmail ? "animate-pulse" : ""}`} />
+            {isSendingEmail ? "Mengirim..." : "Kirim Email ke Semua"}
+          </Button>
+        )}
 
         <Link to="/scan-qr">
           <Button

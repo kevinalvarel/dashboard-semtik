@@ -1,21 +1,25 @@
-import { useState, useMemo } from "react";
-import { useAttendance } from "@/hooks/use-attendance";
-import type { AttendanceParticipant } from "@/api/attendance";
-import { toast } from "sonner";
-import { AlertCircle } from "lucide-react";
+import { useState, useMemo } from 'react';
+import { useAttendance } from '@/hooks/use-attendance';
+import {
+  type AttendanceParticipant,
+  sendEmailToParticipant,
+  sendEmailToAll,
+} from '@/api/attendance';
+import { toast } from 'sonner';
+import { AlertCircle } from 'lucide-react';
 
 // Modular Page Components
-import { HeaderBanner } from "@/components/pages/all-attendance/layout/header-banner";
-import { StatCards } from "@/components/pages/all-attendance/ui/stat-cards";
-import { AttendanceTableSection } from "@/components/pages/all-attendance/ui/attendance-table-section";
-import { AttendanceDetailDialog } from "@/components/pages/all-attendance/ui/attendance-detail-dialog";
+import { HeaderBanner } from '@/components/pages/all-attendance/layout/header-banner';
+import { StatCards } from '@/components/pages/all-attendance/ui/stat-cards';
+import { AttendanceTableSection } from '@/components/pages/all-attendance/ui/attendance-table-section';
+import { AttendanceDetailDialog } from '@/components/pages/all-attendance/ui/attendance-detail-dialog';
 
 export default function AllAttendancePage() {
   // Filters & State
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("semua");
-  const [facultyFilter, setFacultyFilter] = useState<string>("semua");
-  const [sortBy, setSortBy] = useState<string>("waktu_terbaru");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('semua');
+  const [facultyFilter, setFacultyFilter] = useState<string>('semua');
+  const [sortBy, setSortBy] = useState<string>('waktu_terbaru');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
 
@@ -42,18 +46,21 @@ export default function AllAttendancePage() {
 
     return rawList.map((item: any) => {
       const status =
-        item.attendance?.status ?? (item.isCheckedIn ? "hadir" : "belum hadir");
+        item.attendance?.status ?? (item.isCheckedIn ? 'hadir' : 'belum hadir');
       const checkedInAt =
         item.attendance?.checkedInAt ?? item.checkedInAt ?? null;
 
       return {
         id: item.id ?? Math.random().toString(),
-        nim: String(item.nim ?? "-"),
-        nama: item.nama || "Tanpa Nama",
-        email: item.email || "-",
-        fakultas: item.fakultas || "-",
-        prodi: item.prodi || "-",
-        isCheckedIn: status === "hadir",
+        nim: String(item.nim ?? '-'),
+        nama: item.nama || 'Tanpa Nama',
+        email: item.email || '-',
+        fakultas: item.fakultas || '-',
+        prodi: item.prodi || '-',
+        qrCode: item.qrCode || item.qr_code || '-',
+        isEmailSent: Boolean(item.isEmailSent),
+        emailSentAt: item.emailSentAt ?? null,
+        isCheckedIn: status === 'hadir',
         checkedInAt,
         attendance: {
           status,
@@ -67,7 +74,7 @@ export default function AllAttendancePage() {
   const facultyOptions = useMemo(() => {
     const set = new Set<string>();
     participants.forEach((p) => {
-      if (p.fakultas && p.fakultas !== "-") set.add(p.fakultas);
+      if (p.fakultas && p.fakultas !== '-') set.add(p.fakultas);
     });
     return Array.from(set).sort();
   }, [participants]);
@@ -78,10 +85,10 @@ export default function AllAttendancePage() {
 
     const totalPeserta = participants.length;
     const hadir = participants.filter(
-      (p) => p.attendance?.status === "hadir",
+      (p) => p.attendance?.status === 'hadir',
     ).length;
     const belumHadir = participants.filter(
-      (p) => p.attendance?.status === "belum hadir",
+      (p) => p.attendance?.status === 'belum hadir',
     ).length;
     const persentaseKehadiran =
       totalPeserta > 0 ? Math.round((hadir / totalPeserta) * 1000) / 10 : 0;
@@ -107,20 +114,20 @@ export default function AllAttendancePage() {
         p.prodi.toLowerCase().includes(query);
 
       const matchesStatus =
-        statusFilter === "semua" ||
+        statusFilter === 'semua' ||
         p.attendance?.status.toLowerCase() === statusFilter.toLowerCase();
 
       const matchesFaculty =
-        facultyFilter === "semua" || p.fakultas === facultyFilter;
+        facultyFilter === 'semua' || p.fakultas === facultyFilter;
 
       return matchesSearch && matchesStatus && matchesFaculty;
     });
 
     // Sorting
     result.sort((a, b) => {
-      if (sortBy === "nama_asc") return a.nama.localeCompare(b.nama);
-      if (sortBy === "nama_desc") return b.nama.localeCompare(a.nama);
-      if (sortBy === "nim_asc")
+      if (sortBy === 'nama_asc') return a.nama.localeCompare(b.nama);
+      if (sortBy === 'nama_desc') return b.nama.localeCompare(a.nama);
+      if (sortBy === 'nim_asc')
         return String(a.nim).localeCompare(String(b.nim));
 
       const timeA = a.attendance?.checkedInAt
@@ -130,7 +137,7 @@ export default function AllAttendancePage() {
         ? new Date(b.attendance.checkedInAt).getTime()
         : 0;
 
-      if (sortBy === "waktu_terlama") return timeA - timeB;
+      if (sortBy === 'waktu_terlama') return timeA - timeB;
       // default: waktu_terbaru
       return timeB - timeA;
     });
@@ -150,12 +157,12 @@ export default function AllAttendancePage() {
 
   // Handlers
   const handleResetFilters = () => {
-    setSearchQuery("");
-    setStatusFilter("semua");
-    setFacultyFilter("semua");
-    setSortBy("waktu_terbaru");
+    setSearchQuery('');
+    setStatusFilter('semua');
+    setFacultyFilter('semua');
+    setSortBy('waktu_terbaru');
     setCurrentPage(1);
-    toast.info("Filter telah direset");
+    toast.info('Filter telah direset');
   };
 
   const handleOpenDetail = (p: AttendanceParticipant) => {
@@ -170,18 +177,18 @@ export default function AllAttendancePage() {
 
   const handleExportCSV = () => {
     if (filteredAndSortedParticipants.length === 0) {
-      toast.error("Tidak ada data untuk diexport");
+      toast.error('Tidak ada data untuk diexport');
       return;
     }
 
     const headers = [
-      "NIM",
-      "Nama",
-      "Email",
-      "Fakultas",
-      "Prodi",
-      "Status",
-      "Waktu Check-In",
+      'NIM',
+      'Nama',
+      'Email',
+      'Fakultas',
+      'Prodi',
+      'Status',
+      'Waktu Check-In',
     ];
     const rows = filteredAndSortedParticipants.map((p) => [
       `"${p.nim}"`,
@@ -189,63 +196,128 @@ export default function AllAttendancePage() {
       `"${p.email}"`,
       `"${p.fakultas}"`,
       `"${p.prodi}"`,
-      `"${p.attendance?.status || "belum hadir"}"`,
-      `"${p.attendance?.checkedInAt ? new Date(p.attendance.checkedInAt).toLocaleString("id-ID") : "-"}"`,
+      `"${p.attendance?.status || 'belum hadir'}"`,
+      `"${p.attendance?.checkedInAt ? new Date(p.attendance.checkedInAt).toLocaleString('id-ID') : '-'}"`,
     ]);
 
     const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+      'data:text/csv;charset=utf-8,' +
+      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
 
     const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
     link.setAttribute(
-      "download",
+      'download',
       `presensi_semtik_${new Date().toISOString().slice(0, 10)}.csv`,
     );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    toast.success("File CSV presensi berhasil diunduh");
+    toast.success('File CSV presensi berhasil diunduh');
+  };
+
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+
+  const handleSendEmail = async (participant: AttendanceParticipant) => {
+    if (!participant.email || participant.email === '-') {
+      toast.error('Email peserta tidak tersedia.');
+      return;
+    }
+    if (!participant.qrCode || participant.qrCode === '-') {
+      toast.error('QR Code peserta tidak tersedia.');
+      return;
+    }
+
+    try {
+      toast.loading('Mengirim email ke ' + participant.nama + '...', {
+        id: 'send-email',
+      });
+      const res = await sendEmailToParticipant(
+        participant.email,
+        participant.qrCode,
+      );
+      if (res?.success) {
+        toast.success('Email berhasil dikirim ke ' + participant.nama, {
+          id: 'send-email',
+        });
+        refetch();
+      } else {
+        toast.error(
+          'Gagal mengirim email: ' + (res?.message || 'Terjadi kesalahan.'),
+          { id: 'send-email' },
+        );
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Terjadi kesalahan jaringan.';
+      toast.error(message, { id: 'send-email' });
+    }
+  };
+
+  const handleSendEmailAll = async () => {
+    try {
+      setIsSendingEmail(true);
+      toast.loading('Mengirim email ke semua peserta...', {
+        id: 'send-email-all',
+      });
+      const res = await sendEmailToAll();
+      if (res?.success) {
+        toast.success(res.message, { id: 'send-email-all' });
+        refetch();
+      } else {
+        toast.error(
+          'Gagal mengirim email: ' + (res?.message || 'Terjadi kesalahan.'),
+          { id: 'send-email-all' },
+        );
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Terjadi kesalahan jaringan.';
+      toast.error(message, { id: 'send-email-all' });
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   const formatDate = (dateStr: string | null | undefined) => {
-    if (!dateStr) return "-";
+    if (!dateStr) return '-';
     const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return "-";
-    return date.toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
     });
   };
 
   const hasActiveFilters =
-    searchQuery !== "" || statusFilter !== "semua" || facultyFilter !== "semua";
+    searchQuery !== '' || statusFilter !== 'semua' || facultyFilter !== 'semua';
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6 bg-background text-foreground">
+    <div className='flex flex-1 flex-col gap-6 p-6 bg-background text-foreground'>
       {/* Header Banner Component */}
       <HeaderBanner
         isFetching={isFetching}
         onRefetch={refetch}
         onExportCSV={handleExportCSV}
+        onSendEmailAll={handleSendEmailAll}
+        isSendingEmail={isSendingEmail}
       />
 
       {/* Error Alert Banner */}
       {isError && (
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-300">
-          <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+        <div className='flex items-start gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-300'>
+          <AlertCircle className='h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5' />
           <div>
-            <h5 className="font-semibold text-sm">
+            <h5 className='font-semibold text-sm'>
               Gagal Mengambil Data Server
             </h5>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className='text-xs text-muted-foreground mt-0.5'>
               {error instanceof Error
                 ? error.message
-                : "Terjadi kesalahan koneksi API."}
+                : 'Terjadi kesalahan koneksi API.'}
               . Menampilkan sampel data presensi lokal.
             </p>
           </div>
@@ -280,6 +352,7 @@ export default function AllAttendancePage() {
         onOpenDetail={handleOpenDetail}
         onCopyText={handleCopyText}
         formatDate={formatDate}
+        onSendEmail={handleSendEmail}
       />
 
       {/* Participant Detail Dialog Component */}
