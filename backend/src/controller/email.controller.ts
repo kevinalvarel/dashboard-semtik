@@ -17,7 +17,6 @@ export async function sendEmail(req: Request, res: Response) {
         .json({ success: false, message: 'Email and qrCode are required' });
     }
 
-    // Look up participant name for personalization
     const [participant] = await db
       .select()
       .from(peserta)
@@ -29,7 +28,7 @@ export async function sendEmail(req: Request, res: Response) {
     const qrCodeBase64 = qrCodeDataURL.split(',')[1];
 
     const { data, error } = await resend.emails.send({
-      from: 'SEMTIK Admin <onboarding@resend.dev>',
+      from: 'SEMTIK Admin <no-reply@semtik.id>',
       to: email,
       subject: 'QR Code Presensi SEMTIK',
       html: `
