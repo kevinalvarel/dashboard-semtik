@@ -79,7 +79,7 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
       : undefined;
 
     const defaultFrom =
-      (c.env as any).RESEND_FROM || "SEMTIK Admin <onboarding@resend.dev>";
+      (c.env as any).RESEND_FROM || "SEMTIK Admin <admin@semtik.id>";
 
     let { data, error } = await resend.emails.send({
       from: defaultFrom,
@@ -94,11 +94,11 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
       error &&
       (error.message?.includes("domain") ||
         error.message?.includes("not verified")) &&
-      defaultFrom !== "SEMTIK Admin <onboarding@resend.dev>"
+      defaultFrom !== "SEMTIK Admin <admin@semtik.id>"
     ) {
       console.warn("Domain unverified, retrying with onboarding@resend.dev...");
       const retrySender = await resend.emails.send({
-        from: "SEMTIK Admin <onboarding@resend.dev>",
+        from: "SEMTIK Admin <admin@semtik.id>",
         to: email,
         subject: "QR Code Presensi SEMTIK",
         html: emailHtml,
@@ -124,7 +124,7 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
             `Resend Sandbox Mode: Redirecting email for ${email} to owner ${ownerEmail}`,
           );
           const retryRes = await resend.emails.send({
-            from: "SEMTIK Admin <onboarding@resend.dev>",
+            from: "SEMTIK Admin <admin@semtik.id>",
             to: ownerEmail,
             subject: `[Sandbox for ${email}] QR Code Presensi SEMTIK`,
             html: `
@@ -191,7 +191,10 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
     });
   } catch (error: any) {
     console.error("Send email error:", error);
-    return c.json({ success: false, message: error?.message || "Internal server error" }, 500);
+    return c.json(
+      { success: false, message: error?.message || "Internal server error" },
+      500,
+    );
   }
 }
 
