@@ -77,6 +77,7 @@ app.get("/api/profile", authMiddleware, async (c) => {
 // Feature routes
 app.route("/api/attendance", attendanceRoute);
 app.route("/api/emails", emailRoute);
+app.route("/api/email", emailRoute);
 
 // Cloudflare Workers ES Module export
 export default app;

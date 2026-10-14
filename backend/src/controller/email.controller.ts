@@ -8,11 +8,24 @@ import QRCode from "qrcode";
 export async function sendEmail(c: Context<{ Bindings: Env }>) {
   try {
     const { db } = c.get("services");
+
+    if (!c.env.RESEND_API_KEY) {
+      return c.json(
+        {
+          success: false,
+          message: "RESEND_API_KEY is not configured in worker environment",
+        },
+        500,
+      );
+    }
+
     const resend = new Resend(c.env.RESEND_API_KEY);
-    const { email, qrCode } = await c.req.json<{
-      email: string;
-      qrCode: string;
-    }>();
+    const body = await c.req
+      .json<{ email: string; qrCode: string }>()
+      .catch(() => null);
+
+    const email = body?.email?.trim();
+    const qrCode = body?.qrCode?.trim();
 
     if (!email || !qrCode) {
       return c.json(
@@ -28,39 +41,72 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
       .limit(1);
     const nama = participant?.nama || "Peserta";
 
-    const qrCodeDataURL = await QRCode.toDataURL(qrCode);
-    const qrCodeBase64 = qrCodeDataURL.split(",")[1];
+    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrCode)}`;
+    let qrCodeBase64: string | null = null;
+    try {
+      const qrCodeDataURL = await QRCode.toDataURL(qrCode);
+      qrCodeBase64 = qrCodeDataURL.split(",")[1];
+    } catch (e) {
+      console.warn("QRCode base64 generation fallback to url:", e);
+    }
 
-    const { data, error } = await resend.emails.send({
-      from: "SEMTIK Admin <no-reply@semtik.id>",
-      to: email,
-      subject: "QR Code Presensi SEMTIK",
-      html: `
-        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background: #ffffff;">
-          <div style="text-align: center; margin-bottom: 24px;">
-            <h2 style="color: #1a1a2e; margin: 0 0 8px;">Halo ${nama}, Selamat Datang di SEMTIK!</h2>
-            <p style="color: #6b7280; font-size: 14px; margin: 0;">Berikut adalah QR Code Anda untuk keperluan presensi (Check-in).</p>
-          </div>
-          <div style="text-align: center; padding: 24px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb;">
-            <img src="cid:qrcode" alt="QR Code Presensi" width="200" height="200" style="display: block; margin: 0 auto 16px;" />
-            <p style="font-size: 13px; font-weight: 600; color: #374151; background: #e5e7eb; padding: 8px 16px; display: inline-block; border-radius: 6px; font-family: monospace; letter-spacing: 1px;">
-              ${qrCode}
-            </p>
-          </div>
-          <p style="text-align: center; color: #6b7280; font-size: 13px; margin-top: 20px;">
-            Tunjukkan QR Code ini kepada panitia atau scan melalui sistem presensi kami.
+    const emailHtml = `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background: #ffffff;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h2 style="color: #1a1a2e; margin: 0 0 8px;">Halo ${nama}, Selamat Datang di SEMTIK!</h2>
+          <p style="color: #6b7280; font-size: 14px; margin: 0;">Berikut adalah QR Code Anda untuk keperluan presensi (Check-in).</p>
+        </div>
+        <div style="text-align: center; padding: 24px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb;">
+          <img src="${qrImageUrl}" alt="QR Code Presensi" width="200" height="200" style="display: block; margin: 0 auto 16px;" />
+          <p style="font-size: 13px; font-weight: 600; color: #374151; background: #e5e7eb; padding: 8px 16px; display: inline-block; border-radius: 6px; font-family: monospace; letter-spacing: 1px;">
+            ${qrCode}
           </p>
         </div>
-      `,
-      attachments: [
-        {
-          content: qrCodeBase64,
-          filename: "qrcode.png",
-          contentType: "image/png",
-          contentId: "qrcode",
-        },
-      ],
+        <p style="text-align: center; color: #6b7280; font-size: 13px; margin-top: 20px;">
+          Tunjukkan QR Code ini kepada panitia atau scan melalui sistem presensi kami.
+        </p>
+      </div>
+    `;
+
+    const attachments = qrCodeBase64
+      ? [
+          {
+            content: qrCodeBase64,
+            filename: "qrcode.png",
+            contentType: "image/png",
+          },
+        ]
+      : undefined;
+
+    const defaultFrom =
+      (c.env as any).RESEND_FROM || "SEMTIK Admin <onboarding@resend.dev>";
+
+    let { data, error } = await resend.emails.send({
+      from: defaultFrom,
+      to: email,
+      subject: "QR Code Presensi SEMTIK",
+      html: emailHtml,
+      ...(attachments ? { attachments } : {}),
     });
+
+    // If custom domain unverified, retry with onboarding@resend.dev
+    if (
+      error &&
+      (error.message?.includes("domain") ||
+        error.message?.includes("not verified")) &&
+      defaultFrom !== "SEMTIK Admin <onboarding@resend.dev>"
+    ) {
+      console.warn("Domain unverified, retrying with onboarding@resend.dev...");
+      const retrySender = await resend.emails.send({
+        from: "SEMTIK Admin <onboarding@resend.dev>",
+        to: email,
+        subject: "QR Code Presensi SEMTIK",
+        html: emailHtml,
+        ...(attachments ? { attachments } : {}),
+      });
+      data = retrySender.data;
+      error = retrySender.error;
+    }
 
     if (error) {
       console.error("Resend error:", error);
@@ -85,30 +131,9 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
               <div style="background: #fffbeb; border: 1px solid #fef3c7; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-family: sans-serif; font-size: 13px; color: #92400e;">
                 <strong>Sandbox Redirect:</strong> Email ini aslinya ditujukan untuk <strong>${email}</strong>, namun dialihkan ke email terverifikasi Anda untuk keperluan testing.
               </div>
-              <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background: #ffffff;">
-                <div style="text-align: center; margin-bottom: 24px;">
-                  <h2 style="color: #1a1a2e; margin: 0 0 8px;">Halo ${nama}, Selamat Datang di SEMTIK!</h2>
-                  <p style="color: #6b7280; font-size: 14px; margin: 0;">Berikut adalah QR Code Anda untuk keperluan presensi (Check-in).</p>
-                </div>
-                <div style="text-align: center; padding: 24px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb;">
-                  <img src="cid:qrcode" alt="QR Code Presensi" width="200" height="200" style="display: block; margin: 0 auto 16px;" />
-                  <p style="font-size: 13px; font-weight: 600; color: #374151; background: #e5e7eb; padding: 8px 16px; display: inline-block; border-radius: 6px; font-family: monospace; letter-spacing: 1px;">
-                    ${qrCode}
-                  </p>
-                </div>
-                <p style="text-align: center; color: #6b7280; font-size: 13px; margin-top: 20px;">
-                  Tunjukkan QR Code ini kepada panitia atau scan melalui sistem presensi kami.
-                </p>
-              </div>
+              ${emailHtml}
             `,
-            attachments: [
-              {
-                content: qrCodeBase64,
-                filename: "qrcode.png",
-                contentType: "image/png",
-                contentId: "qrcode",
-              },
-            ],
+            ...(attachments ? { attachments } : {}),
           });
 
           if (!retryRes.error) {
@@ -166,14 +191,27 @@ export async function sendEmail(c: Context<{ Bindings: Env }>) {
     });
   } catch (error: any) {
     console.error("Send email error:", error);
-    return c.json({ success: false, message: "Internal server error" }, 500);
+    return c.json({ success: false, message: error?.message || "Internal server error" }, 500);
   }
 }
 
 export async function sendEmailToAll(c: Context<{ Bindings: Env }>) {
   try {
     const { db } = c.get("services");
+
+    if (!c.env.RESEND_API_KEY) {
+      return c.json(
+        {
+          success: false,
+          message: "RESEND_API_KEY is not configured in worker environment",
+        },
+        500,
+      );
+    }
+
     const resend = new Resend(c.env.RESEND_API_KEY);
+    const fromAddress =
+      (c.env as any).RESEND_FROM || "SEMTIK Admin <onboarding@resend.dev>";
 
     // Get all participants
     const participants = await db
@@ -191,7 +229,7 @@ export async function sendEmailToAll(c: Context<{ Bindings: Env }>) {
     const emailsToSend = participants.map((p: any) => {
       const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(p.qrCode)}`;
       return {
-        from: "SEMTIK Admin <onboarding@resend.dev>",
+        from: fromAddress,
         to: [p.email],
         subject: "QR Code Presensi SEMTIK",
         html: `
