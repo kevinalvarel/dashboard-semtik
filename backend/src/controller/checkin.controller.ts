@@ -1,4 +1,5 @@
-import { Request, Response } from "express";
+import { Context } from "hono";
+import { Env } from "../auth";
 import * as checkinService from "../services/checkin.service";
 
 /**
@@ -6,33 +7,50 @@ import * as checkinService from "../services/checkin.service";
  * POST /api/attendance/scan or POST /api/attendance/check-in
  * Request body: { "qrCode": "..." } or { "token": "..." }
  */
-export async function scanQRCode(req: Request, res: Response) {
+export async function scanQRCode(c: Context<{ Bindings: Env }>) {
   try {
-    const { qrCode, token, qr_code, code } = req.body || {};
+    const { db } = c.get("services");
+    const body = await c.req.json<{
+      qrCode?: string;
+      token?: string;
+      qr_code?: string;
+      code?: string;
+    }>();
+
+    const { qrCode, token, qr_code, code } = body || {};
     const qrValue = qrCode || token || qr_code || code;
 
     if (!qrValue || typeof qrValue !== "string" || qrValue.trim() === "") {
-      return res.status(400).json({
-        success: false,
-        message: "QR Code / Token tidak valid atau tidak boleh kosong",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "QR Code / Token tidak valid atau tidak boleh kosong",
+        },
+        400
+      );
     }
 
-    const result = await checkinService.checkIn(qrValue);
+    const result = await checkinService.checkIn(db, qrValue);
 
-    return res.status(result.status).json({
-      success: result.success,
-      message: result.message,
-      ...(result.data ? { data: result.data } : {}),
-    });
+    return c.json(
+      {
+        success: result.success,
+        message: result.message,
+        ...(result.data ? { data: result.data } : {}),
+      },
+      result.status as 200 | 400 | 404 | 409 | 500
+    );
   } catch (error: any) {
     console.error("Error during check-in processing:", error);
 
-    return res.status(500).json({
-      success: false,
-      message: "Terjadi kesalahan internal server saat memproses check-in",
-      error: error?.message || "Internal Server Error",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Terjadi kesalahan internal server saat memproses check-in",
+        error: error?.message || "Internal Server Error",
+      },
+      500
+    );
   }
 }
 

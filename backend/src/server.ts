@@ -1,64 +1,82 @@
-import "dotenv/config";
-import express from "express";
-import cors from "cors";
-import { fromNodeHeaders, toNodeHandler } from "better-auth/node";
-
-import { auth, allowedOrigins } from "./auth";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { createAuth, getAllowedOrigins, Env } from "./auth";
 import { authMiddleware } from "./middleware";
 
 import attendanceRoute from "./routes/attendance.route";
-
-const app = express();
-app.set("trust proxy", 1);
-const port = process.env.PORT || 3000;
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-
-      const cleanOrigin = origin.replace(/\/$/, "");
-      if (allowedOrigins.some((allowed) => allowed.replace(/\/$/, "") === cleanOrigin)) {
-        return callback(null, true);
-      }
-
-      console.warn(`[CORS] Blocked request from origin: ${origin}`);
-      return callback(null, false);
-    },
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    credentials: true,
-  }),
-);
-
-app.all("/api/auth/*splat", toNodeHandler(auth));
-
-app.use(express.json());
-
-// Health check
-app.get("/", (_req, res) => {
-  res.json({ status: "ok", message: "SEMTIK API running" });
-});
-
-app.get("/api/overview", authMiddleware, (req, res) => {
-  res.json({
-    user: (req as any).user,
-  });
-});
-
-app.get("/api/profile", authMiddleware, async (req, res) => {
-  const session = await auth.api.getSession({
-    headers: fromNodeHeaders(req.headers),
-  });
-  return res.json(session);
-});
-
 import emailRoute from "./routes/email.route";
 
-app.use("/api/attendance", attendanceRoute);
-app.use("/api/emails", emailRoute);
+const app = new Hono<{ Bindings: Env }>();
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-  console.log(`Allowed CORS origins:`, allowedOrigins);
+// Global error handler to log and return clean error info
+app.onError((err, c) => {
+  console.error("[Worker Error]:", err);
+  return c.json(
+    {
+      success: false,
+      message: err.message || "Internal Server Error",
+    },
+    500
+  );
 });
 
+// Inject per-request services (db, auth) into context
+app.use("*", async (c, next) => {
+  const { auth, db, allowedOrigins } = createAuth(c.env, c.req.url);
+  c.set("services", { auth, db });
+  (c as any).__allowedOrigins = allowedOrigins;
+  await next();
+});
+
+// CORS
+app.use("*", async (c, next) => {
+  const allowedOrigins = getAllowedOrigins(c.env.FRONTEND_URL);
+  return cors({
+    origin: (origin) => {
+      if (!origin) return origin;
+      const cleanOrigin = origin.replace(/\/$/, "");
+      const match = allowedOrigins.some(
+        (allowed) => allowed.replace(/\/$/, "") === cleanOrigin
+      );
+      if (!match) {
+        console.warn(`[CORS] Blocked request from origin: ${origin}`);
+      }
+      return match ? origin : null;
+    },
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowHeaders: ["Content-Type", "Authorization", "Cookie"],
+    exposeHeaders: ["Set-Cookie"],
+    credentials: true,
+  })(c, next);
+});
+
+// Auth routes — better-auth handles /api/auth/* natively
+app.all("/api/auth/*", async (c) => {
+  const { auth } = c.get("services");
+  return auth.handler(c.req.raw);
+});
+
+// Health check
+app.get("/", (c) => {
+  return c.json({ status: "ok", message: "SEMTIK API running" });
+});
+
+// Protected routes
+app.get("/api/overview", authMiddleware, (c) => {
+  return c.json({ user: c.get("user") });
+});
+
+app.get("/api/profile", authMiddleware, async (c) => {
+  const { auth } = c.get("services");
+  const session = await auth.api.getSession({
+    headers: c.req.raw.headers,
+  });
+  return c.json(session);
+});
+
+// Feature routes
+app.route("/api/attendance", attendanceRoute);
+app.route("/api/emails", emailRoute);
+
+// Cloudflare Workers ES Module export
+export default app;

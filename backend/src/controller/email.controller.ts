@@ -1,20 +1,24 @@
-import { Request, Response } from 'express';
-import { Resend } from 'resend';
-import { db } from '../db/drizzle';
-import { peserta } from '../db/attendance-schema';
-import { eq, inArray } from 'drizzle-orm';
-import QRCode from 'qrcode';
+import { Context } from "hono";
+import { Resend } from "resend";
+import { Env } from "../auth";
+import { peserta } from "../db/attendance-schema";
+import { eq, inArray } from "drizzle-orm";
+import QRCode from "qrcode";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-export async function sendEmail(req: Request, res: Response) {
+export async function sendEmail(c: Context<{ Bindings: Env }>) {
   try {
-    const { email, qrCode } = req.body;
+    const { db } = c.get("services");
+    const resend = new Resend(c.env.RESEND_API_KEY);
+    const { email, qrCode } = await c.req.json<{
+      email: string;
+      qrCode: string;
+    }>();
 
     if (!email || !qrCode) {
-      return res
-        .status(400)
-        .json({ success: false, message: 'Email and qrCode are required' });
+      return c.json(
+        { success: false, message: "Email and qrCode are required" },
+        400,
+      );
     }
 
     const [participant] = await db
@@ -22,15 +26,15 @@ export async function sendEmail(req: Request, res: Response) {
       .from(peserta)
       .where(eq(peserta.email, email))
       .limit(1);
-    const nama = participant?.nama || 'Peserta';
+    const nama = participant?.nama || "Peserta";
 
     const qrCodeDataURL = await QRCode.toDataURL(qrCode);
-    const qrCodeBase64 = qrCodeDataURL.split(',')[1];
+    const qrCodeBase64 = qrCodeDataURL.split(",")[1];
 
     const { data, error } = await resend.emails.send({
-      from: 'SEMTIK Admin <no-reply@semtik.id>',
+      from: "SEMTIK Admin <no-reply@semtik.id>",
       to: email,
-      subject: 'QR Code Presensi SEMTIK',
+      subject: "QR Code Presensi SEMTIK",
       html: `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background: #ffffff;">
           <div style="text-align: center; margin-bottom: 24px;">
@@ -51,20 +55,20 @@ export async function sendEmail(req: Request, res: Response) {
       attachments: [
         {
           content: qrCodeBase64,
-          filename: 'qrcode.png',
-          contentType: 'image/png',
-          contentId: 'qrcode',
+          filename: "qrcode.png",
+          contentType: "image/png",
+          contentId: "qrcode",
         },
       ],
     });
 
     if (error) {
-      console.error('Resend error:', error);
+      console.error("Resend error:", error);
 
       // Handle Resend sandbox domain restriction (only send to owner's email)
       if (
-        error.name === 'validation_error' &&
-        error.message.includes('own email address')
+        error.name === "validation_error" &&
+        error.message.includes("own email address")
       ) {
         const match = error.message.match(/\(([^)]+)\)/);
         const ownerEmail = match ? match[1] : null;
@@ -74,7 +78,7 @@ export async function sendEmail(req: Request, res: Response) {
             `Resend Sandbox Mode: Redirecting email for ${email} to owner ${ownerEmail}`,
           );
           const retryRes = await resend.emails.send({
-            from: 'SEMTIK Admin <onboarding@resend.dev>',
+            from: "SEMTIK Admin <onboarding@resend.dev>",
             to: ownerEmail,
             subject: `[Sandbox for ${email}] QR Code Presensi SEMTIK`,
             html: `
@@ -100,9 +104,9 @@ export async function sendEmail(req: Request, res: Response) {
             attachments: [
               {
                 content: qrCodeBase64,
-                filename: 'qrcode.png',
-                contentType: 'image/png',
-                contentId: 'qrcode',
+                filename: "qrcode.png",
+                contentType: "image/png",
+                contentId: "qrcode",
               },
             ],
           });
@@ -116,7 +120,7 @@ export async function sendEmail(req: Request, res: Response) {
               })
               .where(eq(peserta.email, email));
 
-            return res.json({
+            return c.json({
               success: true,
               message: `Email dialihkan ke owner sandbox (${ownerEmail}) karena batasan Resend.`,
               data: retryRes.data,
@@ -125,7 +129,7 @@ export async function sendEmail(req: Request, res: Response) {
         }
 
         // Fallback simulation if redirect fails
-        console.log('Simulating successful send...');
+        console.log("Simulating successful send...");
         await db
           .update(peserta)
           .set({
@@ -134,15 +138,16 @@ export async function sendEmail(req: Request, res: Response) {
           })
           .where(eq(peserta.email, email));
 
-        return res.json({
+        return c.json({
           success: true,
           message: `Email disimulasikan terkirim ke ${email} (Sandbox Mode).`,
         });
       }
 
-      return res
-        .status(500)
-        .json({ success: false, message: 'Failed to send email', error });
+      return c.json(
+        { success: false, message: "Failed to send email", error },
+        500,
+      );
     }
 
     // Update the database
@@ -154,21 +159,22 @@ export async function sendEmail(req: Request, res: Response) {
       })
       .where(eq(peserta.email, email));
 
-    return res.json({
+    return c.json({
       success: true,
-      message: 'Email sent successfully',
+      message: "Email sent successfully",
       data,
     });
   } catch (error: any) {
-    console.error('Send email error:', error);
-    return res
-      .status(500)
-      .json({ success: false, message: 'Internal server error' });
+    console.error("Send email error:", error);
+    return c.json({ success: false, message: "Internal server error" }, 500);
   }
 }
 
-export async function sendEmailToAll(req: Request, res: Response) {
+export async function sendEmailToAll(c: Context<{ Bindings: Env }>) {
   try {
+    const { db } = c.get("services");
+    const resend = new Resend(c.env.RESEND_API_KEY);
+
     // Get all participants
     const participants = await db
       .select()
@@ -176,18 +182,18 @@ export async function sendEmailToAll(req: Request, res: Response) {
       .where(eq(peserta.isEmailSent, false));
 
     if (participants.length === 0) {
-      return res.json({
+      return c.json({
         success: true,
-        message: 'Semua peserta sudah menerima email.',
+        message: "Semua peserta sudah menerima email.",
       });
     }
 
-    const emailsToSend = participants.map((p) => {
+    const emailsToSend = participants.map((p: any) => {
       const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(p.qrCode)}`;
       return {
-        from: 'SEMTIK Admin <onboarding@resend.dev>',
+        from: "SEMTIK Admin <onboarding@resend.dev>",
         to: [p.email],
-        subject: 'QR Code Presensi SEMTIK',
+        subject: "QR Code Presensi SEMTIK",
         html: `
           <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background: #ffffff;">
             <div style="text-align: center; margin-bottom: 24px;">
@@ -211,11 +217,11 @@ export async function sendEmailToAll(req: Request, res: Response) {
     const { data, error } = await resend.batch.send(emailsToSend);
 
     if (error) {
-      console.error('Resend batch error:', error);
+      console.error("Resend batch error:", error);
 
       if (
-        error.name === 'validation_error' &&
-        error.message.includes('own email address')
+        error.name === "validation_error" &&
+        error.message.includes("own email address")
       ) {
         const match = error.message.match(/\(([^)]+)\)/);
         const ownerEmail = match ? match[1] : null;
@@ -226,10 +232,12 @@ export async function sendEmailToAll(req: Request, res: Response) {
           );
           // Send a consolidated email to owner
           const participantsList = participants
-            .map((p) => `<li>${p.nama} (${p.email}) - Code: ${p.qrCode}</li>`)
-            .join('');
+            .map(
+              (p: any) => `<li>${p.nama} (${p.email}) - Code: ${p.qrCode}</li>`,
+            )
+            .join("");
           const retryRes = await resend.emails.send({
-            from: 'SEMTIK Admin <onboarding@resend.dev>',
+            from: "SEMTIK Admin <onboarding@resend.dev>",
             to: ownerEmail,
             subject: `[Sandbox Batch] QR Code Presensi SEMTIK (${participants.length} Peserta)`,
             html: `
@@ -245,8 +253,7 @@ export async function sendEmailToAll(req: Request, res: Response) {
           });
 
           if (!retryRes.error) {
-            const emailsUpdated = participants.map((p) => p.email);
-            // Update the database
+            const emailsUpdated = participants.map((p: any) => p.email);
             await db
               .update(peserta)
               .set({
@@ -255,7 +262,7 @@ export async function sendEmailToAll(req: Request, res: Response) {
               })
               .where(inArray(peserta.email, emailsUpdated));
 
-            return res.json({
+            return c.json({
               success: true,
               message: `Email batch dialihkan ke owner sandbox (${ownerEmail}) untuk ${participants.length} peserta.`,
               data: retryRes.data,
@@ -264,8 +271,8 @@ export async function sendEmailToAll(req: Request, res: Response) {
         }
 
         // Fallback simulation if redirect fails
-        console.log('Simulating successful batch send...');
-        const emailsUpdated = participants.map((p) => p.email);
+        console.log("Simulating successful batch send...");
+        const emailsUpdated = participants.map((p: any) => p.email);
         await db
           .update(peserta)
           .set({
@@ -274,22 +281,24 @@ export async function sendEmailToAll(req: Request, res: Response) {
           })
           .where(inArray(peserta.email, emailsUpdated));
 
-        return res.json({
+        return c.json({
           success: true,
           message: `Email batch disimulasikan terkirim ke ${participants.length} peserta (Sandbox Mode).`,
         });
       }
 
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to send batch emails',
-        error,
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Failed to send batch emails",
+          error,
+        },
+        500,
+      );
     }
 
-    const emailsUpdated = participants.map((p) => p.email);
+    const emailsUpdated = participants.map((p: any) => p.email);
 
-    // Update the database
     await db
       .update(peserta)
       .set({
@@ -298,16 +307,14 @@ export async function sendEmailToAll(req: Request, res: Response) {
       })
       .where(inArray(peserta.email, emailsUpdated));
 
-    return res.json({
+    return c.json({
       success: true,
       message:
-        'Emails sent successfully to ' + participants.length + ' participants',
+        "Emails sent successfully to " + participants.length + " participants",
       data,
     });
   } catch (error: any) {
-    console.error('Send email batch error:', error);
-    return res
-      .status(500)
-      .json({ success: false, message: 'Internal server error' });
+    console.error("Send email batch error:", error);
+    return c.json({ success: false, message: "Internal server error" }, 500);
   }
 }

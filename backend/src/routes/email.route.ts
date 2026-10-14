@@ -1,7 +1,8 @@
-import { Router } from "express";
+import { Hono } from "hono";
+import { Env } from "../auth";
 import * as emailController from "../controller/email.controller";
 
-const router = Router();
+const router = new Hono<{ Bindings: Env }>();
 
 // POST /api/emails/send
 router.post("/send", emailController.sendEmail);

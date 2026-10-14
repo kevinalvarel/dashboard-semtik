@@ -1,0 +1,12 @@
+name = "backend-semtik"
+main = "src/server.ts"
+compatibility_date = "2026-10-12"
+compatibility_flags = [ "nodejs_compat" ]
+
+[vars]
+FRONTEND_URL = "https://admin-semtik26.netlify.app"
+BETTER_AUTH_URL = "https://backend-semtik.alvarelkevin12.workers.dev"
+
+# Secrets (DATABASE_URL, BETTER_AUTH_SECRET, RESEND_API_KEY)
+# must be set via: npx wrangler secret put <KEY>
+# For local development, use .dev.vars

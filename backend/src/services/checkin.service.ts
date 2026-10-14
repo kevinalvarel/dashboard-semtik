@@ -1,6 +1,10 @@
 import { eq } from "drizzle-orm";
-import { db } from "../db/drizzle";
+import { NeonHttpDatabase } from "drizzle-orm/neon-http";
 import { peserta, Peserta } from "../db/attendance-schema";
+import * as schema from "../db/auth-schema";
+import * as attendanceSchema from "../db/attendance-schema";
+
+type DB = NeonHttpDatabase<typeof schema & typeof attendanceSchema>;
 
 export interface CheckInResult {
   success: boolean;
@@ -11,9 +15,10 @@ export interface CheckInResult {
 
 /**
  * Process participant check-in using QR Code token
+ * @param db Drizzle DB instance
  * @param token QR code string attached to participant
  */
-export async function checkIn(token: string): Promise<CheckInResult> {
+export async function checkIn(db: DB, token: string): Promise<CheckInResult> {
   const cleanToken = token ? token.trim() : "";
 
   if (!cleanToken) {

@@ -1,8 +1,9 @@
-import { Router } from "express";
+import { Hono } from "hono";
+import { Env } from "../auth";
 import * as attendanceController from "../controller/attendance.controller";
 import * as checkinController from "../controller/checkin.controller";
 
-const router = Router();
+const router = new Hono<{ Bindings: Env }>();
 
 // GET /api/attendance - Get all attendance/participants list
 router.get("/", attendanceController.getAttendance);

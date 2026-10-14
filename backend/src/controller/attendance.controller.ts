@@ -1,10 +1,12 @@
-import { Request, Response } from "express";
+import { Context } from "hono";
+import { Env } from "../auth";
 import * as attendanceService from "../services/attendance.service";
 
-export async function getAttendance(req: Request, res: Response) {
-  const data = await attendanceService.getAllAttendance();
+export async function getAttendance(c: Context<{ Bindings: Env }>) {
+  const { db } = c.get("services");
+  const data = await attendanceService.getAllAttendance(db);
 
-  res.json({
+  return c.json({
     success: true,
     data,
   });
