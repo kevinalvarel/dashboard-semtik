@@ -1,4 +1,4 @@
-import { attendanceApi } from '@/lib/api';
+import { attendanceApi } from "@/lib/api";
 
 export interface AttendanceParticipant {
   id: string | number;
@@ -39,12 +39,12 @@ export interface ScanResponse {
 }
 
 export function getAttendance(): Promise<AttendanceApiResponse> {
-  return attendanceApi('/attendance');
+  return attendanceApi("/attendance");
 }
 
 export function scanAttendance(qrCode: string): Promise<ScanResponse> {
-  return attendanceApi('/attendance/scan', {
-    method: 'POST',
+  return attendanceApi("/attendance/scan", {
+    method: "POST",
     body: JSON.stringify({ qrCode }),
   });
 }
@@ -53,14 +53,14 @@ export function sendEmailToParticipant(
   email: string,
   qrCode: string,
 ): Promise<any> {
-  return attendanceApi('/emails/send', {
-    method: 'POST',
+  return attendanceApi("/emails/send", {
+    method: "POST",
     body: JSON.stringify({ email, qrCode }),
   });
 }
 
 export function sendEmailToAll(): Promise<any> {
-  return attendanceApi('/emails/send-all', {
-    method: 'POST',
+  return attendanceApi("/emails/send-all", {
+    method: "POST",
   });
 }
