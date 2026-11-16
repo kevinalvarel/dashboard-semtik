@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/resend/resend-go/v4"
 
 	"semtik.id/backend/attendance"
 	"semtik.id/backend/auth"
@@ -25,7 +26,7 @@ func main() {
 	}
 
 	handler := auth.NewHandler(db, auth.NewTokenManager(cfg.JWTSecret))
-	emailHandler := email.NewHandler(db, email.NewClient(cfg.ResendAPIKey, cfg.ResendFrom))
+	emailHandler := email.NewHandler(db, resend.NewClient(cfg.ResendAPIKey), cfg.ResendFrom)
 	attendanceHandler := attendance.NewHandler(db)
 
 	router := gin.New()

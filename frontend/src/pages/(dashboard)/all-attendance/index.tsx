@@ -55,6 +55,7 @@ export default function AllAttendancePage() {
         nim: String(item.nim ?? '-'),
         nama: item.nama || 'Tanpa Nama',
         email: item.email || '-',
+        universitas: item.universitas || '-',
         fakultas: item.fakultas || '-',
         prodi: item.prodi || '-',
         qrCode: item.qrCode || item.qr_code || '-',
@@ -110,6 +111,7 @@ export default function AllAttendancePage() {
         p.nama.toLowerCase().includes(query) ||
         String(p.nim).includes(query) ||
         p.email.toLowerCase().includes(query) ||
+        (p.universitas && p.universitas.toLowerCase().includes(query)) ||
         p.fakultas.toLowerCase().includes(query) ||
         p.prodi.toLowerCase().includes(query);
 

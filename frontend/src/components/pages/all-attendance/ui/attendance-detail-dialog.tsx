@@ -8,7 +8,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { AttendanceParticipant } from '@/api/attendance';
-import { Users, Building2, GraduationCap, Calendar, Mail } from 'lucide-react';
+import { Users, Building2, GraduationCap, Calendar, Mail, School } from 'lucide-react';
 import QRCode from 'react-qr-code';
 
 interface AttendanceDetailDialogProps {
@@ -84,6 +84,16 @@ export function AttendanceDetailDialog({
                   participant.attendance?.status || 'belum hadir'
                 ).toUpperCase()}
               </Badge>
+            </div>
+
+            <div className='bg-muted/30 p-2.5 rounded-lg border border-border/50 col-span-2'>
+              <span className='text-muted-foreground block text-[11px] mb-0.5 flex items-center gap-1'>
+                <School className='h-3 w-3 text-muted-foreground' />
+                Universitas
+              </span>
+              <span className='font-medium text-foreground'>
+                {participant.universitas || '-'}
+              </span>
             </div>
 
             <div className='bg-muted/30 p-2.5 rounded-lg border border-border/50'>

@@ -5,6 +5,7 @@ export interface AttendanceParticipant {
   nim: string | number;
   nama: string;
   email: string;
+  universitas?: string;
   fakultas: string;
   prodi: string;
   qrCode: string;

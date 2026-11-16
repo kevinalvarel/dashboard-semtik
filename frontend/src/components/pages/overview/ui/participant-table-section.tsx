@@ -65,7 +65,7 @@ export function ParticipantTableSection({
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Cari nama, NIM, fakultas, prodi..."
+                placeholder="Cari nama, NIM, universitas, fakultas, prodi..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 bg-muted/30 border-muted-foreground/20 focus-visible:ring-ring text-xs sm:text-sm h-9"
@@ -139,7 +139,12 @@ export function ParticipantTableSection({
                         {p.nim}
                       </TableCell>
                       <TableCell className="font-medium text-xs sm:text-sm max-w-[130px] sm:max-w-none truncate">
-                        {p.nama}
+                        <div className="truncate">{p.nama}</div>
+                        {p.universitas && p.universitas !== "-" && (
+                          <div className="text-[11px] text-muted-foreground font-normal truncate">
+                            {p.universitas}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-xs text-muted-foreground max-w-[150px] truncate">
                         {p.fakultas || "-"}

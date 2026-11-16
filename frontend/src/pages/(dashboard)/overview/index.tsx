@@ -40,6 +40,7 @@ export default function DashboardPage() {
         nim: String(item.nim ?? "-"),
         nama: item.nama || "Tanpa Nama",
         email: item.email || "-",
+        universitas: item.universitas || "-",
         fakultas: item.fakultas || "-",
         prodi: item.prodi || "-",
         attendance: {
@@ -91,6 +92,7 @@ export default function DashboardPage() {
       const matchesSearch =
         p.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
         String(p.nim).includes(searchQuery) ||
+        (p.universitas && p.universitas.toLowerCase().includes(searchQuery.toLowerCase())) ||
         p.fakultas.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.prodi.toLowerCase().includes(searchQuery.toLowerCase());
 

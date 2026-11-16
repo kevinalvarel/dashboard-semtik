@@ -3,6 +3,7 @@ export interface Participant {
   nim: string | number;
   nama: string;
   email: string;
+  universitas?: string;
   fakultas: string;
   prodi: string;
   attendance: {

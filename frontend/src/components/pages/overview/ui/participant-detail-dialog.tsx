@@ -55,11 +55,17 @@ export function ParticipantDetailDialog({
               </div>
               <div>
                 <span className="text-muted-foreground block mb-0.5">
+                  Universitas
+                </span>
+                <span className="font-medium">{participant.universitas || "-"}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground block mb-0.5">
                   Fakultas
                 </span>
                 <span className="font-medium">{participant.fakultas || "-"}</span>
               </div>
-              <div className="col-span-2">
+              <div>
                 <span className="text-muted-foreground block mb-0.5">
                   Program Studi
                 </span>
