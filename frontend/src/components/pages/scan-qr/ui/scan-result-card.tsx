@@ -13,6 +13,7 @@ import {
   User,
   IdCard,
   GraduationCap,
+  School,
   Mail,
   Clock,
   Store,
@@ -169,6 +170,13 @@ export function ScanResultCard({ lastResult }: ScanResultCardProps) {
                 </>
               )}
             </div>
+
+            {lastResult.participant.universitas && (
+              <div className="flex items-center gap-2">
+                <School className="h-4 w-4 text-muted-foreground" />
+                <span className="truncate">{lastResult.participant.universitas}</span>
+              </div>
+            )}
 
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-muted-foreground text-xs" />

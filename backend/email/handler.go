@@ -1,38 +1,91 @@
 package email
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"html"
 	"log"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/resend/resend-go/v4"
 	"gorm.io/gorm"
 
 	"semtik.id/backend/model"
 )
 
 const (
-	onboardingFrom = "SEMTIK Admin <onboarding@resend.dev>"
-	emailSubject   = "QR Code Presensi SEMTIK"
+	defaultFrom  = "SEMTIK Admin <admin@semtik.id>"
+	emailSubject = "QR Code Presensi SEMTIK"
+	batchLimit   = 100
 )
 
 type Handler struct {
 	db     *gorm.DB
-	client *Client
+	client *resend.Client
+	from   string
 }
 
-func NewHandler(db *gorm.DB, client *Client) *Handler {
-	return &Handler{db: db, client: client}
+func NewHandler(db *gorm.DB, client *resend.Client, from string) *Handler {
+	if from == "" {
+		from = defaultFrom
+	}
+	return &Handler{
+		db:     db,
+		client: client,
+		from:   from,
+	}
+}
+
+func NewClient(apiKey string) *resend.Client {
+	return resend.NewClient(apiKey)
+}
+
+type recipient struct {
+	Nama   string
+	Email  string
+	QRCode string
+}
+
+func (h *Handler) participantName(email string) (string, error) {
+	var mahasiswa model.PesertaMahasiswa
+	err := h.db.Where("email = ?", email).First(&mahasiswa).Error
+	if err == nil {
+		return mahasiswa.Nama, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", err
+	}
+
+	var umkm model.PesertaUMKM
+	err = h.db.Where("email = ?", email).First(&umkm).Error
+	if err == nil {
+		return umkm.Nama, nil
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", nil
+	}
+	return "", err
+}
+
+func (h *Handler) participants() ([]recipient, error) {
+	var mahasiswa []model.PesertaMahasiswa
+	if err := h.db.Where("is_email_sent = ?", false).Find(&mahasiswa).Error; err != nil {
+		return nil, err
+	}
+
+	participants := make([]recipient, 0, len(mahasiswa))
+	for _, p := range mahasiswa {
+		participants = append(participants, recipient{Nama: p.Nama, Email: p.Email, QRCode: p.QRCode})
+	}
+	return participants, nil
 }
 
 func (h *Handler) Send(c *gin.Context) {
-	if h.client.APIKey == "" {
+	if h.client == nil || h.client.ApiKey == "" {
 		fail(c, http.StatusInternalServerError, "RESEND_API_KEY is not configured in worker environment")
 		return
 	}
@@ -53,69 +106,48 @@ func (h *Handler) Send(c *gin.Context) {
 		return
 	}
 
-	var peserta model.Peserta
-	if err := h.db.Where("email = ?", to).First(&peserta).Error; err != nil && err != gorm.ErrRecordNotFound {
+	nama, err := h.participantName(to)
+	if err != nil {
 		fail(c, http.StatusInternalServerError, "Internal server error")
 		return
 	}
-	nama := peserta.Nama
 	if nama == "" {
 		nama = "Peserta"
 	}
 
-	mail := Email{
-		From:    h.client.From,
+	params := &resend.SendEmailRequest{
+		From:    h.from,
 		To:      []string{to},
 		Subject: emailSubject,
-		HTML:    qrEmailHTML(nama, qrCode),
+		Html:    qrEmailHTML(nama, qrCode),
 	}
 
-	result, apiErr := h.sendSingle(c.Request.Context(), mail)
-	if apiErr == nil {
-		h.markSent([]string{to})
-		c.JSON(http.StatusOK, gin.H{"success": true, "message": "Email sent successfully", "data": result})
-		return
-	}
-
-	if isSandboxError(apiErr) {
-		owner := sandboxOwner(apiErr.Message)
-		if owner != "" {
-			retryResult, retryErr := h.client.Send(c.Request.Context(), Email{
-				From:    onboardingFrom,
-				To:      []string{owner},
-				Subject: fmt.Sprintf("[Sandbox for %s] %s", to, emailSubject),
-				HTML:    sandboxBannerHTML(to) + mail.HTML,
-			})
-			if retryErr == nil {
-				h.markSent([]string{to})
-				c.JSON(http.StatusOK, gin.H{
-					"success": true,
-					"message": fmt.Sprintf("Email dialihkan ke owner sandbox (%s) karena batasan Resend.", owner),
-					"data":    retryResult,
-				})
-				return
-			}
-		}
-
-		h.markSent([]string{to})
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": fmt.Sprintf("Email disimulasikan terkirim ke %s (Sandbox Mode).", to),
+	sent, err := h.client.Emails.SendWithContext(c.Request.Context(), params)
+	if err != nil {
+		log.Printf("email: failed to send email to %s: %v", to, err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": fmt.Sprintf("Gagal mengirim email: %v", err),
 		})
 		return
 	}
 
-	c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Failed to send email", "error": apiErr})
+	h.markSent([]string{to})
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Email sent successfully",
+		"data":    sent,
+	})
 }
 
 func (h *Handler) SendAll(c *gin.Context) {
-	if h.client.APIKey == "" {
+	if h.client == nil || h.client.ApiKey == "" {
 		fail(c, http.StatusInternalServerError, "RESEND_API_KEY is not configured in worker environment")
 		return
 	}
 
-	var participants []model.Peserta
-	if err := h.db.Where("is_email_sent = ?", false).Find(&participants).Error; err != nil {
+	participants, err := h.participants()
+	if err != nil {
 		fail(c, http.StatusInternalServerError, "Internal server error")
 		return
 	}
@@ -124,81 +156,45 @@ func (h *Handler) SendAll(c *gin.Context) {
 		return
 	}
 
-	mails := make([]Email, len(participants))
-	emails := make([]string, len(participants))
-	for i, p := range participants {
-		mails[i] = Email{
-			From:    h.client.From,
-			To:      []string{p.Email},
-			Subject: emailSubject,
-			HTML:    qrEmailHTML(p.Nama, p.QRCode),
-		}
-		emails[i] = p.Email
-	}
+	var allResponses []resend.SendEmailResponse
+	sentEmails := make([]string, 0, len(participants))
 
-	result, apiErr := h.sendBatch(c.Request.Context(), mails)
-	if apiErr == nil {
-		h.markSent(emails)
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": fmt.Sprintf("Emails sent successfully to %d participants", len(participants)),
-			"data":    result,
-		})
-		return
-	}
+	for start := 0; start < len(participants); start += batchLimit {
+		end := min(start+batchLimit, len(participants))
+		chunk := participants[start:end]
 
-	if isSandboxError(apiErr) {
-		owner := sandboxOwner(apiErr.Message)
-		if owner != "" {
-			retryResult, retryErr := h.client.Send(c.Request.Context(), Email{
-				From:    onboardingFrom,
-				To:      []string{owner},
-				Subject: fmt.Sprintf("[Sandbox Batch] %s (%d Peserta)", emailSubject, len(participants)),
-				HTML:    batchSandboxHTML(participants),
-			})
-			if retryErr == nil {
-				h.markSent(emails)
-				c.JSON(http.StatusOK, gin.H{
-					"success": true,
-					"message": fmt.Sprintf("Email batch dialihkan ke owner sandbox (%s) untuk %d peserta.", owner, len(participants)),
-					"data":    retryResult,
-				})
-				return
+		batchParams := make([]*resend.SendEmailRequest, len(chunk))
+		chunkEmails := make([]string, len(chunk))
+		for i, p := range chunk {
+			batchParams[i] = &resend.SendEmailRequest{
+				From:    h.from,
+				To:      []string{p.Email},
+				Subject: emailSubject,
+				Html:    qrEmailHTML(p.Nama, p.QRCode),
 			}
+			chunkEmails[i] = p.Email
 		}
 
-		h.markSent(emails)
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"message": fmt.Sprintf("Email batch disimulasikan terkirim ke %d peserta (Sandbox Mode).", len(participants)),
-		})
-		return
-	}
-
-	c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Failed to send batch emails", "error": apiErr})
-}
-
-func (h *Handler) sendSingle(ctx context.Context, mail Email) (*Result, *APIError) {
-	result, apiErr := h.client.Send(ctx, mail)
-	if apiErr != nil && isDomainError(apiErr) && mail.From != onboardingFrom {
-		retry := mail
-		retry.From = onboardingFrom
-		return h.client.Send(ctx, retry)
-	}
-	return result, apiErr
-}
-
-func (h *Handler) sendBatch(ctx context.Context, mails []Email) (*BatchResult, *APIError) {
-	result, apiErr := h.client.SendBatch(ctx, mails)
-	if apiErr != nil && isDomainError(apiErr) && len(mails) > 0 && mails[0].From != onboardingFrom {
-		retry := make([]Email, len(mails))
-		copy(retry, mails)
-		for i := range retry {
-			retry[i].From = onboardingFrom
+		batchResp, err := h.client.Batch.SendWithContext(c.Request.Context(), batchParams)
+		if err != nil {
+			log.Printf("email: batch send failed at chunk %d-%d: %v", start, end, err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": fmt.Sprintf("Gagal mengirim email batch: %v", err),
+			})
+			return
 		}
-		return h.client.SendBatch(ctx, retry)
+
+		h.markSent(chunkEmails)
+		allResponses = append(allResponses, batchResp.Data...)
+		sentEmails = append(sentEmails, chunkEmails...)
 	}
-	return result, apiErr
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": fmt.Sprintf("Emails sent successfully to %d participants", len(sentEmails)),
+		"data":    allResponses,
+	})
 }
 
 func (h *Handler) markSent(emails []string) {
@@ -206,34 +202,11 @@ func (h *Handler) markSent(emails []string) {
 		return
 	}
 	now := time.Now()
-	if err := h.db.Model(&model.Peserta{}).
+	if err := h.db.Model(&model.PesertaMahasiswa{}).
 		Where("email IN ?", emails).
 		Updates(map[string]any{"is_email_sent": true, "email_sent_at": now}).Error; err != nil {
 		log.Printf("email: failed to update sent status: %v", err)
 	}
-}
-
-func isDomainError(apiErr *APIError) bool {
-	message := strings.ToLower(apiErr.Message)
-	return strings.Contains(message, "domain") || strings.Contains(message, "not verified")
-}
-
-func isSandboxError(apiErr *APIError) bool {
-	return apiErr.Name == "validation_error" && strings.Contains(apiErr.Message, "own email address")
-}
-
-var ownerPattern = regexp.MustCompile(`\(([^)]+)\)`)
-
-func sandboxOwner(message string) string {
-	match := ownerPattern.FindStringSubmatch(message)
-	if len(match) < 2 {
-		return ""
-	}
-	owner := strings.TrimSpace(match[1])
-	if !strings.Contains(owner, "@") {
-		return ""
-	}
-	return owner
 }
 
 func qrImageURL(qrCode string) string {
@@ -261,31 +234,6 @@ func qrEmailHTML(nama, qrCode string) string {
         </p>
       </div>
     `, nama, imageURL, qrCode)
-}
-
-func sandboxBannerHTML(email string) string {
-	return fmt.Sprintf(`
-              <div style="background: #fffbeb; border: 1px solid #fef3c7; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-family: sans-serif; font-size: 13px; color: #92400e;">
-                <strong>Sandbox Redirect:</strong> Email ini aslinya ditujukan untuk <strong>%s</strong>, namun dialihkan ke email terverifikasi Anda untuk keperluan testing.
-              </div>
-              `, html.EscapeString(email))
-}
-
-func batchSandboxHTML(participants []model.Peserta) string {
-	var list strings.Builder
-	for _, p := range participants {
-		fmt.Fprintf(&list, "<li>%s (%s) - Code: %s</li>", html.EscapeString(p.Nama), html.EscapeString(p.Email), html.EscapeString(p.QRCode))
-	}
-	return fmt.Sprintf(`
-              <div style="background: #fffbeb; border: 1px solid #fef3c7; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-family: sans-serif; font-size: 13px; color: #92400e;">
-                <strong>Sandbox Redirect:</strong> Email batch ini dialihkan ke email terverifikasi Anda untuk keperluan testing. Aslinya ditujukan untuk %d peserta berikut:
-              </div>
-              <div style="font-family: sans-serif; font-size: 14px;">
-                <h3>Daftar Penerima:</h3>
-                <ul>%s</ul>
-                <p>Silakan lihat profil masing-masing peserta di dashboard untuk melakukan scan QR Code.</p>
-              </div>
-    `, len(participants), list.String())
 }
 
 func fail(c *gin.Context, status int, message string) {

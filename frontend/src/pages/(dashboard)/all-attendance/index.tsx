@@ -79,6 +79,9 @@ export default function AllAttendancePage() {
         universitas: item.universitas || '-',
         bidang: item.bidang || '-',
         kota: item.kota || '-',
+        universitas: item.universitas || '-',
+        fakultas: item.fakultas || '-',
+        prodi: item.prodi || '-',
         qrCode: item.qrCode || item.qr_code || '-',
         isEmailSent: Boolean(item.isEmailSent),
         emailSentAt: item.emailSentAt ?? null,
@@ -163,6 +166,9 @@ export default function AllAttendancePage() {
       const matchesPresence =
         presenceTypeFilter === 'semua' ||
         p.jenisKehadiran?.toLowerCase() === presenceTypeFilter.toLowerCase();
+        (p.universitas && p.universitas.toLowerCase().includes(query)) ||
+        p.fakultas.toLowerCase().includes(query) ||
+        p.prodi.toLowerCase().includes(query);
 
       const matchesStatus =
         statusFilter === 'semua' ||

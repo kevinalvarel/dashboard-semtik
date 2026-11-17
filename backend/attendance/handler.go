@@ -1,6 +1,7 @@
 package attendance
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -247,6 +248,40 @@ func (h *Handler) fetchUMKM(presenceType, status string) ([]model.PesertaUMKM, e
 		list = make([]model.PesertaUMKM, 0)
 	}
 	return list, nil
+type mahasiswaItem struct {
+	model.PesertaMahasiswa
+	Type string `json:"type"`
+}
+
+type umkmItem struct {
+	model.PesertaUMKM
+	Type string `json:"type"`
+}
+
+func (h *Handler) List(c *gin.Context) {
+	var mahasiswa []model.PesertaMahasiswa
+	if err := h.db.Order("id ASC").Find(&mahasiswa).Error; err != nil {
+		log.Printf("attendance: list mahasiswa failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Internal server error"})
+		return
+	}
+
+	var umkm []model.PesertaUMKM
+	if err := h.db.Order("id ASC").Find(&umkm).Error; err != nil {
+		log.Printf("attendance: list umkm failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Internal server error"})
+		return
+	}
+
+	participants := make([]any, 0, len(mahasiswa)+len(umkm))
+	for _, p := range mahasiswa {
+		participants = append(participants, mahasiswaItem{PesertaMahasiswa: p, Type: "mahasiswa"})
+	}
+	for _, p := range umkm {
+		participants = append(participants, umkmItem{PesertaUMKM: p, Type: "umkm"})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": participants})
 }
 
 func (h *Handler) Scan(c *gin.Context) {
@@ -271,51 +306,80 @@ func (h *Handler) Scan(c *gin.Context) {
 	c.JSON(status, result)
 }
 
+type checkInInfo struct {
+	table       string
+	id          string
+	nama        string
+	detail      string
+	isCheckedIn bool
+	checkedInAt *time.Time
+}
+
 func (h *Handler) checkIn(token string) (int, gin.H) {
-	var peserta model.Peserta
-	if err := h.db.Where("qr_code = ?", token).First(&peserta).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return http.StatusNotFound, gin.H{"success": false, "message": "Peserta tidak ditemukan atau QR Code tidak terdaftar"}
-		}
-		log.Printf("attendance: lookup failed: %v", err)
+	var mahasiswa model.PesertaMahasiswa
+	err := h.db.Where("qr_code = ?", token).First(&mahasiswa).Error
+	if err == nil {
+		return h.doCheckIn(checkInInfo{
+			table:       "peserta_mahasiswa",
+			id:          mahasiswa.ID,
+			nama:        mahasiswa.Nama,
+			detail:      " (NIM: " + mahasiswa.NIM + ")",
+			isCheckedIn: mahasiswa.IsCheckedIn,
+			checkedInAt: mahasiswa.CheckedInAt,
+		}, &mahasiswa)
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Printf("attendance: lookup mahasiswa failed: %v", err)
 		return http.StatusInternalServerError, gin.H{"success": false, "message": "Terjadi kesalahan internal server saat memproses check-in"}
 	}
 
-	if peserta.IsCheckedIn {
+	var umkm model.PesertaUMKM
+	if err := h.db.Where("qr_code = ?", token).First(&umkm).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return http.StatusNotFound, gin.H{"success": false, "message": "Peserta tidak ditemukan atau QR Code tidak terdaftar"}
+		}
+		log.Printf("attendance: lookup umkm failed: %v", err)
+		return http.StatusInternalServerError, gin.H{"success": false, "message": "Terjadi kesalahan internal server saat memproses check-in"}
+	}
+
+	return h.doCheckIn(checkInInfo{
+		table:       "peserta_umkm",
+		id:          umkm.ID,
+		nama:        umkm.Nama,
+		isCheckedIn: umkm.IsCheckedIn,
+		checkedInAt: umkm.CheckedInAt,
+	}, &umkm)
+}
+
+func (h *Handler) doCheckIn(info checkInInfo, data any) (int, gin.H) {
+	if info.isCheckedIn {
 		return http.StatusConflict, gin.H{
 			"success": false,
-			"message": fmt.Sprintf("Peserta %s (NIM: %s) sudah check-in pada %s", peserta.Nama, peserta.NIM, formatTime(peserta.CheckedInAt)),
-			"data":    peserta,
+			"message": fmt.Sprintf("Peserta %s%s sudah check-in pada %s", info.nama, info.detail, formatTime(info.checkedInAt)),
+			"data":    data,
 		}
 	}
 
 	now := time.Now()
-	updated := h.db.Model(&model.Peserta{}).
-		Where("id = ? AND is_checked_in = ?", peserta.ID, false).
+	updated := h.db.Table(info.table).
+		Where("id = ? AND is_checked_in = ?", info.id, false).
 		Updates(map[string]any{"is_checked_in": true, "checked_in_at": now, "updated_at": now})
 	if updated.Error != nil {
 		log.Printf("attendance: update failed: %v", updated.Error)
 		return http.StatusInternalServerError, gin.H{"success": false, "message": "Terjadi kesalahan internal server saat memproses check-in"}
 	}
 	if updated.RowsAffected == 0 {
-		if err := h.db.First(&peserta, "id = ?", peserta.ID).Error; err == nil && peserta.IsCheckedIn {
-			return http.StatusConflict, gin.H{
-				"success": false,
-				"message": fmt.Sprintf("Peserta %s (NIM: %s) sudah check-in pada %s", peserta.Nama, peserta.NIM, formatTime(peserta.CheckedInAt)),
-				"data":    peserta,
-			}
-		}
 		return http.StatusConflict, gin.H{"success": false, "message": "Peserta sudah check-in"}
 	}
 
-	if err := h.db.First(&peserta, "id = ?", peserta.ID).Error; err != nil {
+	if err := h.db.First(data, "id = ?", info.id).Error; err != nil {
 		log.Printf("attendance: reload failed: %v", err)
 	}
 
 	return http.StatusOK, gin.H{
 		"success": true,
-		"message": fmt.Sprintf("Check-in berhasil untuk %s (NIM: %s)", peserta.Nama, peserta.NIM),
-		"data":    peserta,
+		"message": fmt.Sprintf("Check-in berhasil untuk %s%s", info.nama, info.detail),
+		"data":    data,
 	}
 }
 

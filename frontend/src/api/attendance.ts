@@ -7,6 +7,9 @@ export interface AttendanceParticipant {
   id: string | number;
   nama: string;
   email: string;
+  universitas?: string;
+  fakultas: string;
+  prodi: string;
   qrCode: string;
   kategori?: ParticipantCategory;
   jenisKehadiran?: string;

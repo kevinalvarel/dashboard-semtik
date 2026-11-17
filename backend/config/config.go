@@ -25,7 +25,7 @@ func Load() (Config, error) {
 		FrontendURL:  os.Getenv("FRONTEND_URL"),
 		Port:         envOr("PORT", "3000"),
 		ResendAPIKey: os.Getenv("RESEND_API_KEY"),
-		ResendFrom:   envOr("RESEND_FROM", "SEMTIK Admin <onboarding@resend.dev>"),
+		ResendFrom:   envOr("RESEND_FROM", "SEMTIK Admin <admin@semtik.id>"),
 	}
 
 	if cfg.DatabaseURL == "" {

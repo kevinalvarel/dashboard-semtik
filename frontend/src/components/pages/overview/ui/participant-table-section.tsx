@@ -65,7 +65,7 @@ export function ParticipantTableSection({
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Cari nama, NIM, fakultas, prodi..."
+                placeholder="Cari nama, NIM, universitas, fakultas, prodi..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 bg-muted/30 border-muted-foreground/20 focus-visible:ring-ring text-xs sm:text-sm h-9"
@@ -218,6 +218,56 @@ export function ParticipantTableSection({
                       </TableRow>
                     );
                   })
+                  filteredParticipants.map((p) => (
+                    <TableRow
+                      key={p.id}
+                      className="hover:bg-muted/30 transition-colors"
+                    >
+                      <TableCell className="font-mono text-[11px] sm:text-xs text-muted-foreground whitespace-nowrap">
+                        {p.nim}
+                      </TableCell>
+                      <TableCell className="font-medium text-xs sm:text-sm max-w-[130px] sm:max-w-none truncate">
+                        <div className="truncate">{p.nama}</div>
+                        {p.universitas && p.universitas !== "-" && (
+                          <div className="text-[11px] text-muted-foreground font-normal truncate">
+                            {p.universitas}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-xs text-muted-foreground max-w-[150px] truncate">
+                        {p.fakultas || "-"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            p.attendance.status === "hadir"
+                              ? "default"
+                              : "outline"
+                          }
+                          className={
+                            p.attendance.status === "hadir"
+                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-0 hover:bg-emerald-500/20 text-[10px] sm:text-xs"
+                              : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-0 hover:bg-amber-500/20 text-[10px] sm:text-xs"
+                          }
+                        >
+                          {p.attendance.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell font-mono text-xs text-muted-foreground whitespace-nowrap">
+                        {formatDate(p.attendance.checkedInAt)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 sm:h-8 px-2 text-xs text-primary hover:text-primary/90 hover:bg-accent cursor-pointer"
+                          onClick={() => onOpenDetail(p)}
+                        >
+                          Detail
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 ) : (
                   <TableRow>
                     <TableCell

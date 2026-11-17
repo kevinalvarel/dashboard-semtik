@@ -10,6 +10,9 @@ export interface Participant {
   kota?: string;
   kategori?: "mahasiswa" | "umkm";
   jenisKehadiran?: string;
+  universitas?: string;
+  fakultas: string;
+  prodi: string;
   attendance: {
     status: string;
     checkedInAt: string | null;
