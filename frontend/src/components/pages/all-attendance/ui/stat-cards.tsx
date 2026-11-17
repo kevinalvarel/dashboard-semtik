@@ -1,19 +1,19 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, CheckCircle2, Clock, Percent } from "lucide-react";
+import {
+  Users,
+  CheckCircle2,
+  Clock,
+  Percent,
+  GraduationCap,
+  Store,
+  Globe,
+  MapPin,
+} from "lucide-react";
+import type { AttendanceStats } from "@/api/attendance";
 
 interface StatCardsProps {
-  stats: {
-    totalPeserta: number;
-    hadir: number;
-    belumHadir: number;
-    persentaseKehadiran: number;
-  };
+  stats: AttendanceStats;
   isLoading: boolean;
 }
 
@@ -38,9 +38,20 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
               {stats.totalPeserta}
             </div>
           )}
-          <p className="text-xs text-muted-foreground mt-1">
-            Peserta terdaftar secara keseluruhan
-          </p>
+          <div className="flex flex-wrap items-center gap-1.5 mt-2">
+            {stats.totalMahasiswa !== undefined && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md border border-indigo-200/60 dark:border-indigo-800/40">
+                <GraduationCap className="h-3 w-3" />
+                Mhs: {stats.totalMahasiswa}
+              </span>
+            )}
+            {stats.totalUmkm !== undefined && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded-md border border-purple-200/60 dark:border-purple-800/40">
+                <Store className="h-3 w-3" />
+                UMKM: {stats.totalUmkm}
+              </span>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -62,9 +73,20 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
               {stats.hadir}
             </div>
           )}
-          <p className="text-xs text-muted-foreground mt-1">
-            Telah melakukan check-in kehadiran
-          </p>
+          <div className="flex flex-wrap items-center gap-1.5 mt-2">
+            {stats.totalOffline !== undefined && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/40">
+                <MapPin className="h-3 w-3" />
+                Offline: {stats.totalOffline}
+              </span>
+            )}
+            {stats.totalOnline !== undefined && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-sky-700 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/40 px-2 py-0.5 rounded-md border border-sky-200/60 dark:border-sky-800/40">
+                <Globe className="h-3 w-3" />
+                Online: {stats.totalOnline}
+              </span>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -86,8 +108,8 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
               {stats.belumHadir}
             </div>
           )}
-          <p className="text-xs text-muted-foreground mt-1">
-            Menunggu kehadiran di venue acara
+          <p className="text-xs text-muted-foreground mt-2">
+            Menunggu kehadiran di sesi acara
           </p>
         </CardContent>
       </Card>
@@ -110,7 +132,7 @@ export function StatCards({ stats, isLoading }: StatCardsProps) {
               {stats.persentaseKehadiran}%
             </div>
           )}
-          <div className="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+          <div className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden">
             <div
               className="h-full bg-primary rounded-full transition-all duration-500"
               style={{ width: `${stats.persentaseKehadiran}%` }}

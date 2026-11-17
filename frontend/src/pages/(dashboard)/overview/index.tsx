@@ -30,18 +30,37 @@ export default function DashboardPage() {
     if (!Array.isArray(rawList)) return [];
 
     return rawList.map((item: any) => {
+      const isMahasiswa = Boolean(
+        item.kategori === "mahasiswa" ||
+        item.nim ||
+        item.fakultas ||
+        item.prodi,
+      );
+      const kategori: "mahasiswa" | "umkm" =
+        item.kategori ?? (isMahasiswa ? "mahasiswa" : "umkm");
+
       const status =
         item.attendance?.status ?? (item.isCheckedIn ? "hadir" : "belum hadir");
       const checkedInAt =
         item.attendance?.checkedInAt ?? item.checkedInAt ?? null;
+      const jenisKehadiran = (
+        item.jenisKehadiran ||
+        item.jenis_kehadiran ||
+        "offline"
+      ).toLowerCase();
 
       return {
         id: item.id ?? Math.random().toString(),
-        nim: String(item.nim ?? "-"),
+        kategori,
+        jenisKehadiran,
+        nim: item.nim ? String(item.nim) : "-",
         nama: item.nama || "Tanpa Nama",
         email: item.email || "-",
-        fakultas: item.fakultas || "-",
-        prodi: item.prodi || "-",
+        fakultas: item.fakultas || (kategori === "umkm" ? "UMKM" : "-"),
+        prodi: item.prodi || (kategori === "umkm" ? (item.bidang || "UMKM") : "-"),
+        universitas: item.universitas || "-",
+        bidang: item.bidang || "-",
+        kota: item.kota || "-",
         attendance: {
           status,
           checkedInAt,
@@ -88,11 +107,15 @@ export default function DashboardPage() {
   // Filtered participants list for search & tabs
   const filteredParticipants = useMemo(() => {
     return participants.filter((p) => {
+      const q = searchQuery.toLowerCase();
       const matchesSearch =
-        p.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        String(p.nim).includes(searchQuery) ||
-        p.fakultas.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.prodi.toLowerCase().includes(searchQuery.toLowerCase());
+        !q ||
+        p.nama.toLowerCase().includes(q) ||
+        String(p.nim ?? "").toLowerCase().includes(q) ||
+        (p.fakultas ? p.fakultas.toLowerCase().includes(q) : false) ||
+        (p.prodi ? p.prodi.toLowerCase().includes(q) : false) ||
+        (p.bidang ? p.bidang.toLowerCase().includes(q) : false) ||
+        (p.kota ? p.kota.toLowerCase().includes(q) : false);
 
       const matchesStatus =
         statusFilter === "semua" ||

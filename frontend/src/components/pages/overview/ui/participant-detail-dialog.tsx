@@ -39,32 +39,65 @@ export function ParticipantDetailDialog({
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-lg">
                 {participant.nama.substring(0, 2).toUpperCase()}
               </div>
-              <div>
-                <h4 className="font-semibold text-base">{participant.nama}</h4>
-                <p className="text-xs text-muted-foreground">
+              <div className="flex flex-col min-w-0">
+                <h4 className="font-semibold text-base truncate">{participant.nama}</h4>
+                <p className="text-xs text-muted-foreground truncate">
                   {participant.email}
                 </p>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <Badge
+                    variant="outline"
+                    className={`text-[10px] px-1.5 py-0 font-medium ${
+                      participant.kategori === "umkm"
+                        ? "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20"
+                        : "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20"
+                    }`}
+                  >
+                    {participant.kategori === "umkm" ? "UMKM" : "Mahasiswa"}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={`text-[10px] px-1.5 py-0 font-medium ${
+                      participant.jenisKehadiran?.toLowerCase() === "online"
+                        ? "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20"
+                        : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                    }`}
+                  >
+                    {participant.jenisKehadiran?.toLowerCase() === "online" ? "Online" : "Offline"}
+                  </Badge>
+                </div>
               </div>
             </div>
 
             {/* Grid detail */}
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div>
-                <span className="text-muted-foreground block mb-0.5">NIM</span>
-                <span className="font-mono font-medium">{participant.nim}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground block mb-0.5">
-                  Fakultas
-                </span>
-                <span className="font-medium">{participant.fakultas || "-"}</span>
-              </div>
-              <div className="col-span-2">
-                <span className="text-muted-foreground block mb-0.5">
-                  Program Studi
-                </span>
-                <span className="font-medium">{participant.prodi || "-"}</span>
-              </div>
+              {participant.kategori === "umkm" ? (
+                <>
+                  <div>
+                    <span className="text-muted-foreground block mb-0.5">Bidang Usaha</span>
+                    <span className="font-medium">{participant.bidang || "-"}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block mb-0.5">Kota / Domisili</span>
+                    <span className="font-medium">{participant.kota || "-"}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <span className="text-muted-foreground block mb-0.5">NIM</span>
+                    <span className="font-mono font-medium">{participant.nim}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block mb-0.5">Fakultas</span>
+                    <span className="font-medium">{participant.fakultas || "-"}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground block mb-0.5">Program Studi</span>
+                    <span className="font-medium">{participant.prodi || "-"}</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Status Section */}

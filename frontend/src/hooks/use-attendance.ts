@@ -1,9 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { getAttendance, type AttendanceApiResponse } from "@/api/attendance";
+import {
+  getAttendance,
+  type AttendanceApiResponse,
+  type AttendanceFilterParams,
+} from "@/api/attendance";
 
-export function useAttendance() {
+export function useAttendance(params?: AttendanceFilterParams) {
   return useQuery<AttendanceApiResponse>({
-    queryKey: ["attendance"],
-    queryFn: getAttendance,
+    queryKey: ["attendance", params],
+    queryFn: () => getAttendance(params),
   });
 }
