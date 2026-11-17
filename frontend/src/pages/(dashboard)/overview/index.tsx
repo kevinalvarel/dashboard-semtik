@@ -61,9 +61,6 @@ export default function DashboardPage() {
         universitas: item.universitas || "-",
         bidang: item.bidang || "-",
         kota: item.kota || "-",
-        universitas: item.universitas || "-",
-        fakultas: item.fakultas || "-",
-        prodi: item.prodi || "-",
         attendance: {
           status,
           checkedInAt,
@@ -115,15 +112,11 @@ export default function DashboardPage() {
         !q ||
         p.nama.toLowerCase().includes(q) ||
         String(p.nim ?? "").toLowerCase().includes(q) ||
+        (p.universitas ? p.universitas.toLowerCase().includes(q) : false) ||
         (p.fakultas ? p.fakultas.toLowerCase().includes(q) : false) ||
         (p.prodi ? p.prodi.toLowerCase().includes(q) : false) ||
         (p.bidang ? p.bidang.toLowerCase().includes(q) : false) ||
         (p.kota ? p.kota.toLowerCase().includes(q) : false);
-        p.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        String(p.nim).includes(searchQuery) ||
-        (p.universitas && p.universitas.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        p.fakultas.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.prodi.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesStatus =
         statusFilter === "semua" ||

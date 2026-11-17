@@ -141,8 +141,7 @@ export function AttendanceTableSection({
           <div className="relative flex-1 min-w-[240px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Cari nama, NIM, email, bidang, kota, prodi..."
-              placeholder="Cari nama, NIM, email, universitas, fakultas, prodi..."
+              placeholder="Cari nama, NIM, email, bidang, kota, prodi, universitas..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -316,11 +315,6 @@ export function AttendanceTableSection({
                 <TableHead className="w-[115px]">Kehadiran</TableHead>
                 <TableHead className="w-[115px]">Status</TableHead>
                 <TableHead className="hidden sm:table-cell w-[130px]">
-                <TableHead className="hidden xl:table-cell">Universitas</TableHead>
-                <TableHead className="hidden md:table-cell">Fakultas</TableHead>
-                <TableHead className="hidden lg:table-cell">Prodi</TableHead>
-                <TableHead className="w-[120px]">Status</TableHead>
-                <TableHead className="hidden sm:table-cell w-[140px]">
                   Waktu Presensi
                 </TableHead>
                 <TableHead className="w-[70px] text-right">Aksi</TableHead>
@@ -339,7 +333,6 @@ export function AttendanceTableSection({
                         <Skeleton className="h-3 w-24" />
                       </div>
                     </TableCell>
-                    <TableCell className="hidden xl:table-cell"><Skeleton className="h-4 w-28" /></TableCell>
                     <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-28" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-14 rounded-full" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
@@ -401,11 +394,6 @@ export function AttendanceTableSection({
                             <span className="text-[11px] text-muted-foreground truncate">
                               {p.email}
                             </span>
-                            {p.universitas && p.universitas !== "-" && (
-                              <span className="text-[10px] text-muted-foreground/80 truncate xl:hidden">
-                                {p.universitas}
-                              </span>
-                            )}
                           </div>
                         </div>
                       </TableCell>
@@ -431,14 +419,13 @@ export function AttendanceTableSection({
                             <span className="text-[11px] text-muted-foreground truncate" title={`${p.fakultas} - ${p.prodi}`}>
                               {p.prodi || p.fakultas || "-"}
                             </span>
+                            {p.universitas && p.universitas !== "-" && (
+                              <span className="text-[10px] text-muted-foreground/80 truncate">
+                                {p.universitas}
+                              </span>
+                            )}
                           </div>
                         )}
-                      <TableCell className="hidden xl:table-cell text-xs text-muted-foreground max-w-[150px] truncate">
-                        {p.universitas || "-"}
-                      </TableCell>
-
-                      <TableCell className="hidden md:table-cell text-xs text-muted-foreground max-w-[150px] truncate">
-                        {p.fakultas}
                       </TableCell>
 
                       {/* Jenis Kehadiran Badge */}
@@ -547,7 +534,7 @@ export function AttendanceTableSection({
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={9}
+                    colSpan={8}
                     className="h-36 text-center text-muted-foreground"
                   >
                     <div className="flex flex-col items-center justify-center gap-2">

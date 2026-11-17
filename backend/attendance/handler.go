@@ -248,40 +248,6 @@ func (h *Handler) fetchUMKM(presenceType, status string) ([]model.PesertaUMKM, e
 		list = make([]model.PesertaUMKM, 0)
 	}
 	return list, nil
-type mahasiswaItem struct {
-	model.PesertaMahasiswa
-	Type string `json:"type"`
-}
-
-type umkmItem struct {
-	model.PesertaUMKM
-	Type string `json:"type"`
-}
-
-func (h *Handler) List(c *gin.Context) {
-	var mahasiswa []model.PesertaMahasiswa
-	if err := h.db.Order("id ASC").Find(&mahasiswa).Error; err != nil {
-		log.Printf("attendance: list mahasiswa failed: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Internal server error"})
-		return
-	}
-
-	var umkm []model.PesertaUMKM
-	if err := h.db.Order("id ASC").Find(&umkm).Error; err != nil {
-		log.Printf("attendance: list umkm failed: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Internal server error"})
-		return
-	}
-
-	participants := make([]any, 0, len(mahasiswa)+len(umkm))
-	for _, p := range mahasiswa {
-		participants = append(participants, mahasiswaItem{PesertaMahasiswa: p, Type: "mahasiswa"})
-	}
-	for _, p := range umkm {
-		participants = append(participants, umkmItem{PesertaUMKM: p, Type: "umkm"})
-	}
-
-	c.JSON(http.StatusOK, gin.H{"success": true, "data": participants})
 }
 
 func (h *Handler) Scan(c *gin.Context) {

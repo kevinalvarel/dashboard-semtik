@@ -20,7 +20,6 @@ import {
   Globe,
   School,
 } from 'lucide-react';
-import { Users, Building2, GraduationCap, Calendar, Mail, School } from 'lucide-react';
 import QRCode from 'react-qr-code';
 
 interface AttendanceDetailDialogProps {
@@ -192,25 +191,6 @@ export function AttendanceDetailDialog({
                 </div>
               </>
             )}
-            <div className='bg-muted/30 p-2.5 rounded-lg border border-border/50 col-span-2'>
-              <span className='text-muted-foreground block text-[11px] mb-0.5 flex items-center gap-1'>
-                <School className='h-3 w-3 text-muted-foreground' />
-                Universitas
-              </span>
-              <span className='font-medium text-foreground'>
-                {participant.universitas || '-'}
-              </span>
-            </div>
-
-            <div className='bg-muted/30 p-2.5 rounded-lg border border-border/50'>
-              <span className='text-muted-foreground block text-[11px] mb-0.5 flex items-center gap-1'>
-                <Building2 className='h-3 w-3 text-muted-foreground' />
-                Fakultas
-              </span>
-              <span className='font-medium text-foreground'>
-                {participant.fakultas}
-              </span>
-            </div>
 
             {participant.isEmailSent && (
               <div className='bg-muted/30 p-2.5 rounded-lg border border-border/50 col-span-2'>
