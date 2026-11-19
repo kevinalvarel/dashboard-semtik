@@ -3,10 +3,10 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd backend && go run .",
+    "dev:backend": "go -C backend run main.go",
     "dev:frontend": "npm --prefix frontend run dev",
-    "build": "npm --prefix frontend run build",
-    "start": "cd backend && go run ."
+    "build": "go -C backend build && npm --prefix frontend run build",
+    "start": "go -C backend run main.go"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

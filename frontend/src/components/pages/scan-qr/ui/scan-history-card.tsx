@@ -57,7 +57,9 @@ export function ScanHistoryCard({ recentScans }: ScanHistoryCardProps) {
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
                       {scan.participant
-                        ? `NIM: ${scan.participant.nim} • ${scan.participant.prodi}${scan.participant.universitas && scan.participant.universitas !== "-" ? ` • ${scan.participant.universitas}` : ""}`
+                        ? scan.participant.kategori === "umkm"
+                          ? `UMKM • ${scan.participant.bidang || "Mitra"}${scan.participant.kota ? ` • ${scan.participant.kota}` : ""}`
+                          : `NIM: ${scan.participant.nim || "-"} • ${scan.participant.prodi || "-"}${scan.participant.universitas && scan.participant.universitas !== "-" ? ` • ${scan.participant.universitas}` : ""}`
                         : scan.message}
                     </p>
                   </div>

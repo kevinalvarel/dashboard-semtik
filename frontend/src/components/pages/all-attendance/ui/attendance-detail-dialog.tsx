@@ -8,7 +8,18 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { AttendanceParticipant } from '@/api/attendance';
-import { Users, Building2, GraduationCap, Calendar, Mail, School } from 'lucide-react';
+import {
+  Users,
+  Building2,
+  GraduationCap,
+  Calendar,
+  Mail,
+  Store,
+  MapPin,
+  Briefcase,
+  Globe,
+  School,
+} from 'lucide-react';
 import QRCode from 'react-qr-code';
 
 interface AttendanceDetailDialogProps {
@@ -23,6 +34,9 @@ export function AttendanceDetailDialog({
   participant,
 }: AttendanceDetailDialogProps) {
   if (!participant) return null;
+
+  const isUmkm = participant.kategori === 'umkm';
+  const isOnline = participant.jenisKehadiran?.toLowerCase() === 'online';
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -40,16 +54,52 @@ export function AttendanceDetailDialog({
         <div className='grid gap-4 py-2'>
           {/* Header profile info */}
           <div className='flex items-center gap-3.5 pb-3 border-b border-border'>
-            <div className='flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-base border border-primary/20'>
+            <div className='flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-base border border-primary/20'>
               {participant.nama.substring(0, 2).toUpperCase()}
             </div>
-            <div className='flex flex-col'>
-              <h4 className='font-bold text-base text-foreground'>
-                {participant.nama}
-              </h4>
-              <p className='text-xs text-muted-foreground'>
+            <div className='flex flex-col min-w-0 flex-1'>
+              <div className='flex items-center gap-1.5 flex-wrap'>
+                <h4 className='font-bold text-base text-foreground truncate'>
+                  {participant.nama}
+                </h4>
+              </div>
+              <p className='text-xs text-muted-foreground truncate'>
                 {participant.email}
               </p>
+              {/* Badges bar */}
+              <div className='flex items-center gap-1.5 mt-1.5 flex-wrap'>
+                <Badge
+                  variant='outline'
+                  className={`text-[10px] px-2 py-0.2 font-medium inline-flex items-center gap-1 ${
+                    isUmkm
+                      ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20'
+                      : 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20'
+                  }`}
+                >
+                  {isUmkm ? (
+                    <Store className='h-2.5 w-2.5' />
+                  ) : (
+                    <GraduationCap className='h-2.5 w-2.5' />
+                  )}
+                  {isUmkm ? 'UMKM' : 'Mahasiswa'}
+                </Badge>
+
+                <Badge
+                  variant='outline'
+                  className={`text-[10px] px-2 py-0.2 font-medium inline-flex items-center gap-1 ${
+                    isOnline
+                      ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20'
+                      : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
+                  }`}
+                >
+                  {isOnline ? (
+                    <Globe className='h-2.5 w-2.5' />
+                  ) : (
+                    <MapPin className='h-2.5 w-2.5' />
+                  )}
+                  {isOnline ? 'Online' : 'Offline'}
+                </Badge>
+              </div>
             </div>
           </div>
 
@@ -57,10 +107,10 @@ export function AttendanceDetailDialog({
           <div className='grid grid-cols-2 gap-3 text-xs'>
             <div className='bg-muted/30 p-2.5 rounded-lg border border-border/50'>
               <span className='text-muted-foreground block text-[11px] mb-0.5'>
-                NIM / ID
+                {isUmkm ? 'Kategori Peserta' : 'NIM Mahasiswa'}
               </span>
               <span className='font-mono font-semibold text-foreground'>
-                {participant.nim}
+                {isUmkm ? 'UMKM Mitra' : participant.nim || '-'}
               </span>
             </div>
 
@@ -86,40 +136,67 @@ export function AttendanceDetailDialog({
               </Badge>
             </div>
 
-            <div className='bg-muted/30 p-2.5 rounded-lg border border-border/50 col-span-2'>
-              <span className='text-muted-foreground block text-[11px] mb-0.5 flex items-center gap-1'>
-                <School className='h-3 w-3 text-muted-foreground' />
-                Universitas
-              </span>
-              <span className='font-medium text-foreground'>
-                {participant.universitas || '-'}
-              </span>
-            </div>
+            {isUmkm ? (
+              <>
+                <div className='bg-muted/30 p-2.5 rounded-lg border border-border/50'>
+                  <span className='text-muted-foreground block text-[11px] mb-0.5 flex items-center gap-1'>
+                    <Briefcase className='h-3 w-3 text-muted-foreground' />
+                    Bidang Usaha
+                  </span>
+                  <span className='font-medium text-foreground'>
+                    {participant.bidang || '-'}
+                  </span>
+                </div>
 
-            <div className='bg-muted/30 p-2.5 rounded-lg border border-border/50'>
-              <span className='text-muted-foreground block text-[11px] mb-0.5 flex items-center gap-1'>
-                <Building2 className='h-3 w-3 text-muted-foreground' />
-                Fakultas
-              </span>
-              <span className='font-medium text-foreground'>
-                {participant.fakultas}
-              </span>
-            </div>
+                <div className='bg-muted/30 p-2.5 rounded-lg border border-border/50'>
+                  <span className='text-muted-foreground block text-[11px] mb-0.5 flex items-center gap-1'>
+                    <MapPin className='h-3 w-3 text-muted-foreground' />
+                    Kota / Domisili
+                  </span>
+                  <span className='font-medium text-foreground'>
+                    {participant.kota || '-'}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className='bg-muted/30 p-2.5 rounded-lg border border-border/50 col-span-2'>
+                  <span className='text-muted-foreground block text-[11px] mb-0.5 flex items-center gap-1'>
+                    <School className='h-3 w-3 text-muted-foreground' />
+                    Universitas / Perguruan Tinggi
+                  </span>
+                  <span className='font-medium text-foreground'>
+                    {participant.universitas || '-'}
+                  </span>
+                </div>
 
-            <div className='bg-muted/30 p-2.5 rounded-lg border border-border/50'>
-              <span className='text-muted-foreground block text-[11px] mb-0.5 flex items-center gap-1'>
-                <GraduationCap className='h-3 w-3 text-muted-foreground' />
-                Program Studi
-              </span>
-              <span className='font-medium text-foreground'>
-                {participant.prodi}
-              </span>
-            </div>
+                <div className='bg-muted/30 p-2.5 rounded-lg border border-border/50'>
+                  <span className='text-muted-foreground block text-[11px] mb-0.5 flex items-center gap-1'>
+                    <Building2 className='h-3 w-3 text-muted-foreground' />
+                    Fakultas
+                  </span>
+                  <span className='font-medium text-foreground'>
+                    {participant.fakultas || '-'}
+                  </span>
+                </div>
+
+                <div className='bg-muted/30 p-2.5 rounded-lg border border-border/50'>
+                  <span className='text-muted-foreground block text-[11px] mb-0.5 flex items-center gap-1'>
+                    <GraduationCap className='h-3 w-3 text-muted-foreground' />
+                    Program Studi
+                  </span>
+                  <span className='font-medium text-foreground'>
+                    {participant.prodi || '-'}
+                  </span>
+                </div>
+              </>
+            )}
+
             {participant.isEmailSent && (
-              <div className='bg-muted/30 p-2.5 rounded-lg border border-border/50'>
+              <div className='bg-muted/30 p-2.5 rounded-lg border border-border/50 col-span-2'>
                 <span className='text-muted-foreground block text-[11px] mb-0.5 flex items-center gap-1'>
                   <Mail className='h-3 w-3 text-muted-foreground' />
-                  Status Email
+                  Status Email Undangan
                 </span>
                 <span className='font-medium text-foreground flex items-center gap-1.5'>
                   <Badge
@@ -166,7 +243,7 @@ export function AttendanceDetailDialog({
             <div className='flex items-center gap-2 text-xs'>
               <Calendar className='h-4 w-4 text-primary' />
               <span className='text-muted-foreground'>
-                Waktu Masuk Check-in:
+                Waktu Check-in:
               </span>
             </div>
             <span className='font-mono text-xs font-semibold text-foreground'>

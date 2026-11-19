@@ -46,11 +46,20 @@ import {
   ChevronRight,
   Sparkles,
   Mail,
+  GraduationCap,
+  Store,
+  Globe,
+  MapPin,
+  Briefcase,
 } from "lucide-react";
 
 interface AttendanceTableSectionProps {
   searchQuery: string;
   setSearchQuery: (val: string) => void;
+  kategoriFilter: string;
+  setKategoriFilter: (val: string) => void;
+  presenceTypeFilter: string;
+  setPresenceTypeFilter: (val: string) => void;
   statusFilter: string;
   setStatusFilter: (val: string) => void;
   facultyFilter: string;
@@ -78,6 +87,10 @@ interface AttendanceTableSectionProps {
 export function AttendanceTableSection({
   searchQuery,
   setSearchQuery,
+  kategoriFilter,
+  setKategoriFilter,
+  presenceTypeFilter,
+  setPresenceTypeFilter,
   statusFilter,
   setStatusFilter,
   facultyFilter,
@@ -116,7 +129,7 @@ export function AttendanceTableSection({
 
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span>Menampilkan presensi terkini</span>
+            <span>Menampilkan data presensi terintegrasi Mahasiswa & UMKM</span>
           </div>
         </div>
       </CardHeader>
@@ -128,7 +141,7 @@ export function AttendanceTableSection({
           <div className="relative flex-1 min-w-[240px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Cari nama, NIM, email, universitas, fakultas, prodi..."
+              placeholder="Cari nama, NIM, email, bidang, kota, prodi, universitas..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -148,7 +161,67 @@ export function AttendanceTableSection({
 
           {/* Filters Group */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Status Select */}
+            {/* Kategori Select */}
+            <Select
+              value={kategoriFilter}
+              onValueChange={(val) => {
+                if (val) {
+                  setKategoriFilter(val);
+                  setCurrentPage(1);
+                }
+              }}
+            >
+              <SelectTrigger className="w-[145px] h-9 text-xs border-border bg-card">
+                <SelectValue placeholder="Kategori" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="semua">Semua Kategori</SelectItem>
+                <SelectItem value="mahasiswa">
+                  <span className="flex items-center gap-1.5">
+                    <GraduationCap className="h-3.5 w-3.5 text-indigo-500" />
+                    Mahasiswa
+                  </span>
+                </SelectItem>
+                <SelectItem value="umkm">
+                  <span className="flex items-center gap-1.5">
+                    <Store className="h-3.5 w-3.5 text-purple-500" />
+                    UMKM
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Jenis Kehadiran Select */}
+            <Select
+              value={presenceTypeFilter}
+              onValueChange={(val) => {
+                if (val) {
+                  setPresenceTypeFilter(val);
+                  setCurrentPage(1);
+                }
+              }}
+            >
+              <SelectTrigger className="w-[145px] h-9 text-xs border-border bg-card">
+                <SelectValue placeholder="Jenis Kehadiran" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="semua">Semua Kehadiran</SelectItem>
+                <SelectItem value="offline">
+                  <span className="flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-emerald-500" />
+                    Offline (Venue)
+                  </span>
+                </SelectItem>
+                <SelectItem value="online">
+                  <span className="flex items-center gap-1.5">
+                    <Globe className="h-3.5 w-3.5 text-sky-500" />
+                    Online (Daring)
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Status Kehadiran Select */}
             <Select
               value={statusFilter}
               onValueChange={(val) => {
@@ -158,7 +231,7 @@ export function AttendanceTableSection({
                 }
               }}
             >
-              <SelectTrigger className="w-[140px] h-9 text-xs border-border bg-card">
+              <SelectTrigger className="w-[135px] h-9 text-xs border-border bg-card">
                 <SelectValue placeholder="Status Kehadiran" />
               </SelectTrigger>
               <SelectContent>
@@ -168,28 +241,30 @@ export function AttendanceTableSection({
               </SelectContent>
             </Select>
 
-            {/* Faculty Select */}
-            <Select
-              value={facultyFilter}
-              onValueChange={(val) => {
-                if (val) {
-                  setFacultyFilter(val);
-                  setCurrentPage(1);
-                }
-              }}
-            >
-              <SelectTrigger className="w-[160px] h-9 text-xs border-border bg-card">
-                <SelectValue placeholder="Fakultas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="semua">Semua Fakultas</SelectItem>
-                {facultyOptions.map((fac) => (
-                  <SelectItem key={fac} value={fac}>
-                    {fac}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Faculty Select (hidden if specifically filtering to UMKM) */}
+            {kategoriFilter !== "umkm" && facultyOptions.length > 0 && (
+              <Select
+                value={facultyFilter}
+                onValueChange={(val) => {
+                  if (val) {
+                    setFacultyFilter(val);
+                    setCurrentPage(1);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-[155px] h-9 text-xs border-border bg-card">
+                  <SelectValue placeholder="Fakultas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="semua">Semua Fakultas</SelectItem>
+                  {facultyOptions.map((fac) => (
+                    <SelectItem key={fac} value={fac}>
+                      {fac}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
             {/* Sort By Select */}
             <Select
@@ -201,7 +276,7 @@ export function AttendanceTableSection({
                 }
               }}
             >
-              <SelectTrigger className="w-[150px] h-9 text-xs border-border bg-card">
+              <SelectTrigger className="w-[140px] h-9 text-xs border-border bg-card">
                 <SelectValue placeholder="Urutkan" />
               </SelectTrigger>
               <SelectContent>
@@ -233,14 +308,13 @@ export function AttendanceTableSection({
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead className="w-[60px] text-center">No</TableHead>
-                <TableHead className="w-[120px]">NIM</TableHead>
+                <TableHead className="w-[50px] text-center">No</TableHead>
+                <TableHead className="w-[110px]">Kategori</TableHead>
                 <TableHead>Peserta</TableHead>
-                <TableHead className="hidden xl:table-cell">Universitas</TableHead>
-                <TableHead className="hidden md:table-cell">Fakultas</TableHead>
-                <TableHead className="hidden lg:table-cell">Prodi</TableHead>
-                <TableHead className="w-[120px]">Status</TableHead>
-                <TableHead className="hidden sm:table-cell w-[140px]">
+                <TableHead className="hidden md:table-cell">Detail / Institusi</TableHead>
+                <TableHead className="w-[115px]">Kehadiran</TableHead>
+                <TableHead className="w-[115px]">Status</TableHead>
+                <TableHead className="hidden sm:table-cell w-[130px]">
                   Waktu Presensi
                 </TableHead>
                 <TableHead className="w-[70px] text-right">Aksi</TableHead>
@@ -252,16 +326,15 @@ export function AttendanceTableSection({
                 Array.from({ length: pageSize }).map((_, idx) => (
                   <TableRow key={idx}>
                     <TableCell><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
                     <TableCell>
                       <div className="space-y-1">
                         <Skeleton className="h-4 w-32" />
                         <Skeleton className="h-3 w-24" />
                       </div>
                     </TableCell>
-                    <TableCell className="hidden xl:table-cell"><Skeleton className="h-4 w-28" /></TableCell>
                     <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-28" /></TableCell>
-                    <TableCell className="hidden lg:table-cell"><Skeleton className="h-4 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-14 rounded-full" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
                     <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-20" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-8 ml-auto rounded-md" /></TableCell>
@@ -271,6 +344,8 @@ export function AttendanceTableSection({
                 paginatedParticipants.map((p, idx) => {
                   const rowNumber = (validPage - 1) * pageSize + idx + 1;
                   const isHadir = p.attendance?.status === "hadir";
+                  const isUmkm = p.kategori === "umkm";
+                  const isOnline = p.jenisKehadiran?.toLowerCase() === "online";
 
                   return (
                     <TableRow
@@ -281,13 +356,35 @@ export function AttendanceTableSection({
                         {rowNumber}
                       </TableCell>
 
-                      <TableCell className="font-mono text-xs font-medium text-foreground">
-                        {p.nim}
+                      {/* Kategori Badge */}
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] px-2 py-0.5 font-medium inline-flex items-center gap-1 ${
+                            isUmkm
+                              ? "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20"
+                              : "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20"
+                          }`}
+                        >
+                          {isUmkm ? (
+                            <Store className="h-3 w-3" />
+                          ) : (
+                            <GraduationCap className="h-3 w-3" />
+                          )}
+                          {isUmkm ? "UMKM" : "Mahasiswa"}
+                        </Badge>
                       </TableCell>
 
+                      {/* Peserta Info */}
                       <TableCell>
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs">
+                          <div
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-bold text-xs ${
+                              isUmkm
+                                ? "bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                                : "bg-primary/10 text-primary"
+                            }`}
+                          >
                             {p.nama.substring(0, 2).toUpperCase()}
                           </div>
                           <div className="flex flex-col min-w-0">
@@ -297,41 +394,74 @@ export function AttendanceTableSection({
                             <span className="text-[11px] text-muted-foreground truncate">
                               {p.email}
                             </span>
-                            {p.universitas && p.universitas !== "-" && (
-                              <span className="text-[10px] text-muted-foreground/80 truncate xl:hidden">
-                                {p.universitas}
-                              </span>
-                            )}
                           </div>
                         </div>
                       </TableCell>
 
-                      <TableCell className="hidden xl:table-cell text-xs text-muted-foreground max-w-[150px] truncate">
-                        {p.universitas || "-"}
+                      {/* Detail / Institusi */}
+                      <TableCell className="hidden md:table-cell text-xs text-muted-foreground max-w-[200px]">
+                        {isUmkm ? (
+                          <div className="flex flex-col">
+                            <span className="font-medium text-foreground flex items-center gap-1 truncate">
+                              <Briefcase className="h-3 w-3 text-muted-foreground shrink-0" />
+                              {p.bidang || "UMKM"}
+                            </span>
+                            <span className="text-[11px] text-muted-foreground flex items-center gap-1 truncate">
+                              <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                              {p.kota || "-"}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col">
+                            <span className="font-mono font-medium text-foreground text-[11px]">
+                              NIM: {p.nim || "-"}
+                            </span>
+                            <span className="text-[11px] text-muted-foreground truncate" title={`${p.fakultas} - ${p.prodi}`}>
+                              {p.prodi || p.fakultas || "-"}
+                            </span>
+                            {p.universitas && p.universitas !== "-" && (
+                              <span className="text-[10px] text-muted-foreground/80 truncate">
+                                {p.universitas}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </TableCell>
 
-                      <TableCell className="hidden md:table-cell text-xs text-muted-foreground max-w-[150px] truncate">
-                        {p.fakultas}
-                      </TableCell>
-
-                      <TableCell className="hidden lg:table-cell text-xs text-muted-foreground max-w-[140px] truncate">
-                        {p.prodi}
-                      </TableCell>
-
+                      {/* Jenis Kehadiran Badge */}
                       <TableCell>
-                        <div className="flex flex-col gap-1.5 items-start">
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] px-2 py-0.5 font-medium inline-flex items-center gap-1 ${
+                            isOnline
+                              ? "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20"
+                              : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                          }`}
+                        >
+                          {isOnline ? (
+                            <Globe className="h-3 w-3" />
+                          ) : (
+                            <MapPin className="h-3 w-3" />
+                          )}
+                          {isOnline ? "Online" : "Offline"}
+                        </Badge>
+                      </TableCell>
+
+                      {/* Status Kehadiran */}
+                      <TableCell>
+                        <div className="flex flex-col gap-1 items-start">
                           <Badge
                             variant={isHadir ? "default" : "outline"}
                             className={
                               isHadir
-                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-0 hover:bg-emerald-500/20 text-[11px] font-medium"
-                                : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-0 hover:bg-amber-500/20 text-[11px] font-medium"
+                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-0 hover:bg-emerald-500/20 text-[10px] font-medium"
+                                : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-0 hover:bg-amber-500/20 text-[10px] font-medium"
                             }
                           >
                             {p.attendance?.status || "belum hadir"}
                           </Badge>
                           {p.isEmailSent && (
-                            <Badge variant="outline" className="text-[10px] bg-indigo-50/50 text-indigo-600 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800">
+                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-indigo-50/50 text-indigo-600 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800">
                               Email Terkirim
                             </Badge>
                           )}
@@ -366,13 +496,15 @@ export function AttendanceTableSection({
                                 <Eye className="h-3.5 w-3.5 text-primary" />
                                 Lihat Detail
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => onCopyText(String(p.nim), "NIM")}
-                                className="text-xs gap-2 cursor-pointer"
-                              >
-                                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                                Salin NIM
-                              </DropdownMenuItem>
+                              {p.nim && p.nim !== "-" && (
+                                <DropdownMenuItem
+                                  onClick={() => onCopyText(String(p.nim), "NIM")}
+                                  className="text-xs gap-2 cursor-pointer"
+                                >
+                                  <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                                  Salin NIM
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem
                                 onClick={() => onCopyText(p.email, "Email")}
                                 className="text-xs gap-2 cursor-pointer"
@@ -402,7 +534,7 @@ export function AttendanceTableSection({
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={9}
+                    colSpan={8}
                     className="h-36 text-center text-muted-foreground"
                   >
                     <div className="flex flex-col items-center justify-center gap-2">
@@ -411,18 +543,8 @@ export function AttendanceTableSection({
                         Tidak ada data peserta ditemukan
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Coba sesuaikan kata kunci pencarian atau filter yang Anda pilih.
+                        Coba sesuaikan kata kunci pencarian atau reset filter yang aktif.
                       </p>
-                      {hasActiveFilters && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={onResetFilters}
-                          className="mt-2 text-xs h-8 cursor-pointer"
-                        >
-                          Reset Filter
-                        </Button>
-                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -431,54 +553,52 @@ export function AttendanceTableSection({
           </Table>
         </div>
 
-        {/* Pagination Controls */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <span>Tampilkan:</span>
+        {/* Pagination Section */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Baris per halaman:</span>
             <Select
               value={String(pageSize)}
               onValueChange={(val) => {
-                if (val) {
-                  setPageSize(Number(val));
-                  setCurrentPage(1);
-                }
+                setPageSize(Number(val));
+                setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="w-[70px] h-8 text-xs border-border bg-card">
-                <SelectValue placeholder="10" />
+              <SelectTrigger className="h-8 w-16 text-xs border-border bg-card">
+                <SelectValue placeholder={String(pageSize)} />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="5">5</SelectItem>
                 <SelectItem value="10">10</SelectItem>
                 <SelectItem value="25">25</SelectItem>
                 <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
               </SelectContent>
             </Select>
-            <span>
-              Menampilkan {filteredCount > 0 ? (validPage - 1) * pageSize + 1 : 0} -{" "}
-              {Math.min(validPage * pageSize, filteredCount)} dari {filteredCount} data
+            <span className="hidden sm:inline">
+              Menampilkan {Math.min(filteredCount, (validPage - 1) * pageSize + 1)}-
+              {Math.min(filteredCount, validPage * pageSize)} dari {filteredCount} peserta
             </span>
           </div>
 
-          <div className="flex items-center gap-1 self-end sm:self-auto">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 border-border cursor-pointer"
-              disabled={validPage <= 1}
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="px-3 font-medium text-foreground">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground mr-2">
               Halaman {validPage} dari {totalPages}
             </span>
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8 border-border cursor-pointer"
-              disabled={validPage >= totalPages}
+              className="h-8 w-8 border-border hover:bg-accent cursor-pointer"
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={validPage <= 1 || isLoading}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 border-border hover:bg-accent cursor-pointer"
               onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={validPage >= totalPages || isLoading}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>

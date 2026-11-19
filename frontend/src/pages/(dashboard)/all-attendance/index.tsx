@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useAttendance } from '@/hooks/use-attendance';
 import {
   type AttendanceParticipant,
+  type AttendanceStats,
   sendEmailToParticipant,
   sendEmailToAll,
 } from '@/api/attendance';
@@ -17,6 +18,8 @@ import { AttendanceDetailDialog } from '@/components/pages/all-attendance/ui/att
 export default function AllAttendancePage() {
   // Filters & State
   const [searchQuery, setSearchQuery] = useState('');
+  const [kategoriFilter, setKategoriFilter] = useState<string>('semua');
+  const [presenceTypeFilter, setPresenceTypeFilter] = useState<string>('semua');
   const [statusFilter, setStatusFilter] = useState<string>('semua');
   const [facultyFilter, setFacultyFilter] = useState<string>('semua');
   const [sortBy, setSortBy] = useState<string>('waktu_terbaru');
@@ -28,7 +31,7 @@ export default function AllAttendancePage() {
     useState<AttendanceParticipant | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  // Fetch using TanStack React Query
+  // Fetch using TanStack React Query (fetching all integrated data)
   const {
     data: apiResponse,
     isLoading,
@@ -38,26 +41,44 @@ export default function AllAttendancePage() {
     refetch,
   } = useAttendance();
 
-  // Normalize participants data
+  // Normalize participants data with full support for Mahasiswa & UMKM
   const participants: AttendanceParticipant[] = useMemo(() => {
     const rawList = apiResponse?.data || apiResponse?.participants || [];
 
     if (!Array.isArray(rawList)) return [];
 
     return rawList.map((item: any) => {
+      const isMahasiswa = Boolean(
+        item.kategori === 'mahasiswa' ||
+        item.nim ||
+        item.fakultas ||
+        item.prodi,
+      );
+      const kategori: 'mahasiswa' | 'umkm' =
+        item.kategori ?? (isMahasiswa ? 'mahasiswa' : 'umkm');
+
       const status =
         item.attendance?.status ?? (item.isCheckedIn ? 'hadir' : 'belum hadir');
       const checkedInAt =
         item.attendance?.checkedInAt ?? item.checkedInAt ?? null;
+      const jenisKehadiran = (
+        item.jenisKehadiran ||
+        item.jenis_kehadiran ||
+        'offline'
+      ).toLowerCase();
 
       return {
         id: item.id ?? Math.random().toString(),
-        nim: String(item.nim ?? '-'),
+        kategori,
+        jenisKehadiran,
+        nim: item.nim ? String(item.nim) : '-',
         nama: item.nama || 'Tanpa Nama',
         email: item.email || '-',
+        fakultas: item.fakultas || (kategori === 'umkm' ? 'UMKM' : '-'),
+        prodi: item.prodi || (kategori === 'umkm' ? (item.bidang || 'UMKM') : '-'),
         universitas: item.universitas || '-',
-        fakultas: item.fakultas || '-',
-        prodi: item.prodi || '-',
+        bidang: item.bidang || '-',
+        kota: item.kota || '-',
         qrCode: item.qrCode || item.qr_code || '-',
         isEmailSent: Boolean(item.isEmailSent),
         emailSentAt: item.emailSentAt ?? null,
@@ -71,19 +92,19 @@ export default function AllAttendancePage() {
     });
   }, [apiResponse, isError]);
 
-  // Extract unique faculties list for filter dropdown
+  // Extract unique faculties list for filter dropdown (only for Mahasiswa)
   const facultyOptions = useMemo(() => {
     const set = new Set<string>();
     participants.forEach((p) => {
-      if (p.fakultas && p.fakultas !== '-') set.add(p.fakultas);
+      if (p.kategori === 'mahasiswa' && p.fakultas && p.fakultas !== '-') {
+        set.add(p.fakultas);
+      }
     });
     return Array.from(set).sort();
   }, [participants]);
 
-  // Calculate overall stats dynamically
-  const stats = useMemo(() => {
-    if (apiResponse?.stats) return apiResponse.stats;
-
+  // Calculate overall stats dynamically with category and presence breakdowns
+  const stats: AttendanceStats = useMemo(() => {
     const totalPeserta = participants.length;
     const hadir = participants.filter(
       (p) => p.attendance?.status === 'hadir',
@@ -94,13 +115,30 @@ export default function AllAttendancePage() {
     const persentaseKehadiran =
       totalPeserta > 0 ? Math.round((hadir / totalPeserta) * 1000) / 10 : 0;
 
+    const totalMahasiswa = participants.filter(
+      (p) => p.kategori === 'mahasiswa',
+    ).length;
+    const totalUmkm = participants.filter(
+      (p) => p.kategori === 'umkm',
+    ).length;
+    const totalOnline = participants.filter(
+      (p) => p.jenisKehadiran === 'online',
+    ).length;
+    const totalOffline = participants.filter(
+      (p) => p.jenisKehadiran === 'offline',
+    ).length;
+
     return {
       totalPeserta,
       hadir,
       belumHadir,
       persentaseKehadiran,
+      totalMahasiswa,
+      totalUmkm,
+      totalOnline,
+      totalOffline,
     };
-  }, [apiResponse?.stats, participants]);
+  }, [participants]);
 
   // Filter & Sorting Logic
   const filteredAndSortedParticipants = useMemo(() => {
@@ -109,11 +147,22 @@ export default function AllAttendancePage() {
       const matchesSearch =
         !query ||
         p.nama.toLowerCase().includes(query) ||
-        String(p.nim).includes(query) ||
+        String(p.nim).toLowerCase().includes(query) ||
         p.email.toLowerCase().includes(query) ||
+        (p.fakultas && p.fakultas.toLowerCase().includes(query)) ||
+        (p.prodi && p.prodi.toLowerCase().includes(query)) ||
         (p.universitas && p.universitas.toLowerCase().includes(query)) ||
-        p.fakultas.toLowerCase().includes(query) ||
-        p.prodi.toLowerCase().includes(query);
+        (p.bidang && p.bidang.toLowerCase().includes(query)) ||
+        (p.kota && p.kota.toLowerCase().includes(query)) ||
+        (p.kategori && p.kategori.toLowerCase().includes(query)) ||
+        (p.jenisKehadiran && p.jenisKehadiran.toLowerCase().includes(query));
+
+      const matchesKategori =
+        kategoriFilter === 'semua' || p.kategori === kategoriFilter;
+
+      const matchesPresence =
+        presenceTypeFilter === 'semua' ||
+        p.jenisKehadiran?.toLowerCase() === presenceTypeFilter.toLowerCase();
 
       const matchesStatus =
         statusFilter === 'semua' ||
@@ -122,7 +171,13 @@ export default function AllAttendancePage() {
       const matchesFaculty =
         facultyFilter === 'semua' || p.fakultas === facultyFilter;
 
-      return matchesSearch && matchesStatus && matchesFaculty;
+      return (
+        matchesSearch &&
+        matchesKategori &&
+        matchesPresence &&
+        matchesStatus &&
+        matchesFaculty
+      );
     });
 
     // Sorting
@@ -145,7 +200,15 @@ export default function AllAttendancePage() {
     });
 
     return result;
-  }, [participants, searchQuery, statusFilter, facultyFilter, sortBy]);
+  }, [
+    participants,
+    searchQuery,
+    kategoriFilter,
+    presenceTypeFilter,
+    statusFilter,
+    facultyFilter,
+    sortBy,
+  ]);
 
   // Pagination Logic
   const totalItems = filteredAndSortedParticipants.length;
@@ -160,6 +223,8 @@ export default function AllAttendancePage() {
   // Handlers
   const handleResetFilters = () => {
     setSearchQuery('');
+    setKategoriFilter('semua');
+    setPresenceTypeFilter('semua');
     setStatusFilter('semua');
     setFacultyFilter('semua');
     setSortBy('waktu_terbaru');
@@ -184,20 +249,26 @@ export default function AllAttendancePage() {
     }
 
     const headers = [
-      'NIM',
+      'Kategori',
+      'Jenis Kehadiran',
+      'NIM / Identifier',
       'Nama',
       'Email',
-      'Fakultas',
+      'Institusi / Kota',
+      'Fakultas / Bidang',
       'Prodi',
-      'Status',
+      'Status Presensi',
       'Waktu Check-In',
     ];
     const rows = filteredAndSortedParticipants.map((p) => [
-      `"${p.nim}"`,
+      `"${p.kategori === 'umkm' ? 'UMKM' : 'Mahasiswa'}"`,
+      `"${p.jenisKehadiran === 'online' ? 'Online' : 'Offline'}"`,
+      `"${p.nim || '-'}"`,
       `"${p.nama}"`,
       `"${p.email}"`,
-      `"${p.fakultas}"`,
-      `"${p.prodi}"`,
+      `"${p.kategori === 'umkm' ? p.kota : p.universitas || '-'}"`,
+      `"${p.kategori === 'umkm' ? p.bidang : p.fakultas || '-'}"`,
+      `"${p.prodi || '-'}"`,
       `"${p.attendance?.status || 'belum hadir'}"`,
       `"${p.attendance?.checkedInAt ? new Date(p.attendance.checkedInAt).toLocaleString('id-ID') : '-'}"`,
     ]);
@@ -295,7 +366,11 @@ export default function AllAttendancePage() {
   };
 
   const hasActiveFilters =
-    searchQuery !== '' || statusFilter !== 'semua' || facultyFilter !== 'semua';
+    searchQuery !== '' ||
+    kategoriFilter !== 'semua' ||
+    presenceTypeFilter !== 'semua' ||
+    statusFilter !== 'semua' ||
+    facultyFilter !== 'semua';
 
   return (
     <div className='flex flex-1 flex-col gap-6 p-6 bg-background text-foreground'>
@@ -333,6 +408,10 @@ export default function AllAttendancePage() {
       <AttendanceTableSection
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        kategoriFilter={kategoriFilter}
+        setKategoriFilter={setKategoriFilter}
+        presenceTypeFilter={presenceTypeFilter}
+        setPresenceTypeFilter={setPresenceTypeFilter}
         statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}
         facultyFilter={facultyFilter}
